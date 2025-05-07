@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 
 const sectionStyle = {
   maxWidth: '1100px',
@@ -27,9 +27,88 @@ const listStyle = {
 const emailStyle = { color: '#b00', textDecoration: 'underline', wordBreak: 'break-all' };
 const linkStyle = { color: '#1976d2', textDecoration: 'underline', cursor: 'pointer' };
 
+const topBarStyle = {
+  width: '100%',
+  background: '#e9cccc',
+  minHeight: 80,
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'space-between',
+  padding: '0 8vw',
+  boxSizing: 'border-box',
+};
+const logoStyle = {
+  fontWeight: 700,
+  fontSize: '2rem',
+  color: '#b86a6a',
+  fontFamily: 'serif',
+  letterSpacing: 1,
+  flex: 1,
+  textAlign: 'left',
+  pointerEvents: 'none',
+};
+const centerBoxStyle = {
+  flex: 1,
+  display: 'flex',
+  justifyContent: 'center',
+  alignItems: 'center',
+  gap: 20,
+};
+const rightBoxStyle = {
+  flex: 1,
+};
+const notifyStyle = {
+  display: 'flex',
+  alignItems: 'center',
+  fontSize: '1.15rem',
+  marginRight: 10,
+  color: '#222',
+  fontWeight: 400,
+  background: 'none',
+  border: 'none',
+  cursor: 'default',
+  padding: '8px 16px',
+  borderRadius: 6,
+  transition: 'background 0.2s',
+  pointerEvents: 'none',
+};
+const notifyHoverStyle = {
+  background: '#f5e2e2',
+};
+const telegramBtnStyle = {
+  fontSize: '1.2rem',
+  padding: '8px 32px',
+  border: '1.5px solid #222',
+  borderRadius: 6,
+  background: 'none',
+  cursor: 'pointer',
+  fontWeight: 400,
+  transition: 'background 0.2s',
+};
+
 function App() {
+  const [notifyHover, setNotifyHover] = useState(false);
+
   return (
     <div style={{ background: '#fff', minHeight: '100vh', paddingBottom: 40 }}>
+      {/* 상단 바 */}
+      <div style={topBarStyle}>
+        <span style={logoStyle}>Big</span>
+        <div style={centerBoxStyle}>
+          <button
+            style={notifyStyle}
+          >
+            <span role="img" aria-label="fire" style={{marginRight: 4}}>🔥</span>Get Notified
+          </button>
+          <button
+            style={telegramBtnStyle}
+            onClick={() => window.open('https://t.me/bigsignal_ai', '_blank')}
+          >
+            Join Our Telegram
+          </button>
+        </div>
+        <div style={rightBoxStyle}></div>
+      </div>
       {/* 1. AI로 만나는 USDT 자동 트레이딩 */}
       <section style={sectionStyle}>
         <div style={titleStyle}>AI로 만나는 USDT 자동 트레이딩</div>
@@ -58,7 +137,7 @@ function App() {
             <ul>
               <li>텔레그램 메시지를 이용한 직접 매매를 충분히 테스트해 보신 뒤, 자동 매매가 필요하다고 느끼시면, 빗썸 API 키를 BigSignal에 연동해 AI가 24시간 자동으로 매수·매도를 진행하도록 전환할 수 있습니다.</li>
               <li>
-                (연결 원하시는 분은 <span style={emailStyle}>donghoonlee@hanyang.ac.kr</span> 으로 연락해주시면, 연결 방법을 안내해드리겠습니다.)
+                (연결 원하시는 분은 <span style={emailStyle}>jinyeonge1234@naver.com</span> 으로 연락해주시면, 연결 방법을 안내해드리겠습니다.)
               </li>
             </ul>
           </li>
@@ -126,7 +205,7 @@ function App() {
           관심 있는 분들은 홈페이지 하단에 제공된 텔레그램 링크를 통해 BTC 및 DOGE 시그널을 받아보실 수 있습니다.
         </div>
         <div style={{ textAlign: 'center', fontSize: '1rem', marginBottom: 30 }}>
-          Got Questions? <span style={emailStyle}>donghoonlee@hanyang.ac.kr</span><br />
+          Got Questions? <span style={emailStyle}>jinyeonge1234@naver.com</span><br />
           <a href="https://t.me/bigsignal_btc" target="_blank" rel="noopener noreferrer" style={linkStyle}>Beta Test with Bitcoin</a><br />
           <a href="http://@bigsignal_doge" target="_blank" rel="noopener noreferrer" style={linkStyle}>Beta Test with Dogecoin</a>
         </div>
