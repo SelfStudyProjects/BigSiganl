@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { FaTelegramPlane } from 'react-icons/fa';
 
 const sectionStyle = {
   maxWidth: '1100px',
@@ -49,8 +50,8 @@ const logoStyle = {
 };
 const centerBoxStyle = {
   flex: 1,
-  display: 'flex',
-  justifyContent: 'center',
+    display: 'flex',
+    justifyContent: 'center',
   alignItems: 'center',
   gap: 20,
 };
@@ -88,6 +89,29 @@ const telegramBtnStyle = {
 
 function App() {
   const [notifyHover, setNotifyHover] = useState(false);
+  const [lang, setLang] = useState('ko');
+
+  // 한글/영문 텍스트 정의
+  const text = {
+    ko: {
+      gotQuestions: '궁금한 점이 있으신가요?',
+      email: 'jinyeonge1234@naver.com',
+      betaBtc: '비트코인 베타 테스트',
+      betaDoge: '도지코인 베타 테스트',
+      telegram: '텔레그램',
+      korean: '한국어',
+      english: 'English',
+    },
+    en: {
+      gotQuestions: 'Got Questions?',
+      email: 'jinyeonge1234@naver.com',
+      betaBtc: 'Beta Test with Bitcoin',
+      betaDoge: 'Beta Test with Dogecoin',
+      telegram: 'Telegram',
+      korean: 'Korean',
+      english: 'English',
+    },
+  };
 
   return (
     <div style={{ background: '#fff', minHeight: '100vh', paddingBottom: 40 }}>
@@ -205,9 +229,26 @@ function App() {
           관심 있는 분들은 홈페이지 하단에 제공된 텔레그램 링크를 통해 BTC 및 DOGE 시그널을 받아보실 수 있습니다.
         </div>
         <div style={{ textAlign: 'center', fontSize: '1rem', marginBottom: 30 }}>
-          Got Questions? <span style={emailStyle}>jinyeonge1234@naver.com</span><br />
-          <a href="https://t.me/bigsignal_btc" target="_blank" rel="noopener noreferrer" style={linkStyle}>Beta Test with Bitcoin</a><br />
-          <a href="http://@bigsignal_doge" target="_blank" rel="noopener noreferrer" style={linkStyle}>Beta Test with Dogecoin</a>
+          {text[lang].gotQuestions} <a href={`mailto:${text[lang].email}`} style={emailStyle}>{text[lang].email}</a><br />
+          <a href="https://t.me/bigsignal_btc" target="_blank" rel="noopener noreferrer" style={linkStyle}>{text[lang].betaBtc}</a><br />
+          <a href="https://t.me/bigsignal_doge" target="_blank" rel="noopener noreferrer" style={linkStyle}>{text[lang].betaDoge}</a><br />
+        </div>
+        {/* 텔레그램 원형 버튼 */}
+        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', marginBottom: 30 }}>
+          <button
+            onClick={() => window.open('https://t.me/bigsignal_ai', '_blank')}
+            style={{
+              width: 48, height: 48, borderRadius: '50%', background: '#63aee3', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', boxShadow: '0 2px 8px #e0e0e0',
+            }}
+            aria-label="Telegram"
+          >
+            <FaTelegramPlane color="#fff" size={28} />
+          </button>
+        </div>
+        {/* 언어 전환 버튼 */}
+        <div style={{ display: 'flex', justifyContent: 'center', gap: 30 }}>
+          <button onClick={() => setLang('ko')} style={{ background: 'none', border: 'none', color: lang === 'ko' ? '#222' : '#888', fontWeight: lang === 'ko' ? 700 : 400, fontSize: '1rem', cursor: 'pointer', textDecoration: 'underline' }}>{text[lang].korean}</button>
+          <button onClick={() => setLang('en')} style={{ background: 'none', border: 'none', color: lang === 'en' ? '#222' : '#888', fontWeight: lang === 'en' ? 700 : 400, fontSize: '1rem', cursor: 'pointer', textDecoration: 'underline' }}>{text[lang].english}</button>
         </div>
       </section>
     </div>
