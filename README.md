@@ -11,6 +11,30 @@ BigSignal/
 └── analysis/             # 파이썬 분석 코드
 ```
 
+## 프로젝트 견적
+
+```mermaid
+graph TD
+    A[텔레그램 메시지 로그] --> B{데이터 수집/가공<br>(Node.js 함수)};
+    C[빗썸 API/데이터] --> B;
+    B --> D[수익률 계산 및 DB 저장<br>(Firebase Database)];
+    D --> E[시각화 데이터 준비<br>(Node.js 함수)];
+    E --> F[시각화 그래프 생성<br>(Python 스크립트)];
+    F --> G[시각화 자료 제공<br>(Firebase Storage or direct)];
+    G --> H[프론트엔드<br>(React JS)];
+    H --> I[사용자 (X 홍보 대상)];
+    H --> J[관리자 (내부 확인용)];
+
+    classDef default fill:#f9f,stroke:#333,stroke-width:2px;
+    classDef data fill:#ccf,stroke:#333,stroke-width:2px;
+    classDef code fill:#cfc,stroke:#333,stroke-width:2px;
+    class A,C data;
+    class B,D,E,F code;
+    class G data;
+    class H code;
+    class I,J data;
+```
+
 ## 시작하기
 
 ### 프론트엔드 (React)
