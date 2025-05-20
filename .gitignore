@@ -3,7 +3,7 @@
 # upload
 /uploads
 
-# analysis_fetch_telegram_trades
+# fetch_telegram_trades
 /analysis/fetch_telegram_trades
 
 # database
