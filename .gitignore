@@ -4,7 +4,7 @@
 /uploads
 
 # analysis_fetch_telegram_trades
-/analysis_fetch_telegram_trades
+/analysis/fetch_telegram_trades
 
 # database
 /database.json
