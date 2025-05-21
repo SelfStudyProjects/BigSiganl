@@ -3,6 +3,9 @@
 # upload
 /uploads
 
+# .env
+.env
+
 # fetch_telegram_trades
 /analysis/fetch_telegram_trades
 
