@@ -1,7 +1,7 @@
 from telethon.sync import TelegramClient
 import re
 import csv
-from datetime import datetime
+from datetime import datetime, date
 import pandas as pd
 from dotenv import load_dotenv
 import os
@@ -49,7 +49,10 @@ async def main():
     
     trades = []
     
-    async for message in client.iter_messages(chat_id, offset_date=None, reverse=True):
+    # 4월 21일부터의 메시지만 가져오기
+    start_date = date(2024, 4, 21)
+    
+    async for message in client.iter_messages(chat_id, offset_date=start_date, reverse=True):
         if message.text:
             trade_info = parse_trade_message(message.text)
             if trade_info:
