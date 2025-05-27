@@ -15,7 +15,7 @@ chat_id = int(os.getenv('CHAT_ID'))
 
 client = TelegramClient('session_name', api_id, api_hash)
 
-def parse_trade_message(message_text):
+def parse_trade_message(message_text, message_date):
     """텔레그램 메시지를 파싱하여 거래 정보를 추출합니다."""
     try:
         action = 'SELL' if '📉 SELL' in message_text else 'BUY' if '📈 BUY' in message_text else None
@@ -33,7 +33,7 @@ def parse_trade_message(message_text):
 
         if all([action, price, pair, ratio]):
             return {
-                'timestamp': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+                'timestamp': message_date.strftime('%Y-%m-%d %H:%M:%S'),
                 'action': action,
                 'pair': pair,
                 'price': price,
@@ -54,7 +54,7 @@ async def main():
     
     async for message in client.iter_messages(chat_id, offset_date=start_date, reverse=True):
         if message.text:
-            trade_info = parse_trade_message(message.text)
+            trade_info = parse_trade_message(message.text, message.date)
             if trade_info:
                 trades.append(trade_info)
                 print(f"거래 정보 추출: {trade_info}")
