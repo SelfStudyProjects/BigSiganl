@@ -60,8 +60,11 @@ async def main():
                 print(f"거래 정보 추출: {trade_info}")
 
     if trades:
+        # 결과 디렉토리 생성
+        os.makedirs('analysis/data/bigsignal', exist_ok=True)
+        
         df = pd.DataFrame(trades)
-        df.to_csv('trades.csv', index=False, encoding='utf-8-sig')
+        df.to_csv('analysis/data/bigsignal/trades.csv', index=False, encoding='utf-8-sig')
         print(f"총 {len(trades)}개의 거래 내역이 trades.csv 파일로 저장되었습니다.")
 
 with client:

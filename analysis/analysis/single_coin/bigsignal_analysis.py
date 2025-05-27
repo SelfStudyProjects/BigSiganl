@@ -1,8 +1,12 @@
 import sys
 import os
-sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
 
-from scripts.utils import load_trade_data, calculate_returns, save_results
+# 프로젝트 루트 디렉토리를 Python 경로에 추가
+current_dir = os.path.dirname(os.path.abspath(__file__))
+project_root = os.path.dirname(os.path.dirname(os.path.dirname(current_dir)))
+sys.path.append(project_root)
+
+from analysis.scripts.utils import load_trade_data, calculate_returns, save_results
 
 def analyze_single_coins():
     # 거래 데이터 로드
