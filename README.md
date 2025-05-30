@@ -1,6 +1,51 @@
-# BigSignal Project
+# 빅시그널 자동매매 시스템
 
-BigSignal은 암호화폐 시장 분석 및 신호 제공 서비스입니다.
+텔레그램 메시지를 기반으로 한 자동매매 시그널 분석 및 포트폴리오 시뮬레이션 시스템입니다.
+
+## 설치 방법
+
+1. Python 3.8 이상이 필요합니다.
+2. 필요한 패키지 설치:
+```bash
+pip install -r requirements.txt
+```
+
+## 환경 설정
+
+1. 텔레그램 API 설정:
+   - https://my.telegram.org 에서 API ID와 API Hash를 발급받으세요.
+   - `.env` 파일을 생성하고 다음 내용을 입력하세요:
+   ```
+   TELEGRAM_API_ID=your_api_id
+   TELEGRAM_API_HASH=your_api_hash
+   TELEGRAM_PHONE=your_phone_number
+   TELEGRAM_CHANNEL=your_channel_username
+   ```
+
+## 사용 방법
+
+1. 텔레그램 메시지 수집:
+```bash
+python telegram_message_processor.py
+```
+
+2. 포트폴리오 분석:
+```bash
+python portfolio_analyzer.py
+```
+
+## 시스템 구조
+
+1. `telegram_message_processor.py`: 텔레그램 메시지 수집 및 파싱
+2. `portfolio_analyzer.py`: 포트폴리오 시뮬레이션 및 분석
+3. `trades.csv`: 수집된 거래 데이터
+4. `all_portfolio_pnl_summary.json`: 포트폴리오 분석 결과
+
+## 주의사항
+
+- 텔레그램 API 키는 절대 공개하지 마세요.
+- 메시지 형식이 변경되면 정규표현식 패턴을 업데이트해야 합니다.
+- CSV 파일은 자동으로 생성되며, 기존 파일이 있으면 추가 모드로 동작합니다.
 
 ## 프로젝트 구조
 

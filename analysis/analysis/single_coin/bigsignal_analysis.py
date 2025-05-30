@@ -23,3 +23,4 @@ def analyze_single_coins():
 
 if __name__ == '__main__':
     analyze_single_coins()
+
