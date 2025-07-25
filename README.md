@@ -149,7 +149,7 @@ graph TD
     class I,J data;
 ```
 
-```mermaid
+flowchart TD
   subgraph 고객사
     A1[고객사 캐시 테이블]
     A2[고객사 → Salesforce 매핑 결과 테이블]
@@ -197,4 +197,3 @@ graph TD
     - 다중 인스턴스 운영
     - 장애 시 자동 전환 및 롤백 지원
   end
-```
