@@ -148,3 +148,53 @@ graph TD
     class H code;
     class I,J data;
 ```
+
+```mermaid
+  subgraph 고객사
+    A1[고객사 캐시 테이블]
+    A2[고객사 → Salesforce 매핑 결과 테이블]
+    A3[Salesforce → 고객사 매핑 결과 테이블]
+  end
+
+  subgraph 미들웨어
+    B1[데이터 매핑 및 변환]
+    B2[REST API 서버]
+    B3[이메일 게이트웨이 서버 (Java / Docker)]
+    B4[DB: 캐시 및 매핑 결과 저장]
+    B5[로그 및 모니터링 시스템]
+  end
+
+  subgraph Salesforce
+    C1[Salesforce 캐시 테이블]
+    C2[Salesforce API]
+    C3[관리자 UI (매핑 설정 및 로그 조회)]
+  end
+
+  %% 데이터 흐름 - 고객사 → Salesforce
+  A1 -->|1. 이메일 발송 요청 저장| B4
+  B4 -->|2. 데이터 매핑 및 변환| B1
+  B1 -->|3. 매핑 결과 저장| A2
+  A2 -->|4. Salesforce API 호출| C2
+  C2 -->|5. 발송 결과 저장| C1
+  C1 -->|6. 결과 데이터 매핑| B1
+  B1 -->|7. 매핑 결과 저장| A3
+
+  %% Salesforce → 고객사 데이터 흐름
+  A3 -->|8. 고객사에서 발송 결과 조회| 고객사
+
+  %% API 및 UI
+  C3 -->|매핑 설정 및 로그 조회| B2
+  B2 -->|API 요청 처리| B3
+  B3 -->|이메일 발송 처리| C2
+
+  %% 로깅 및 모니터링
+  B5 -->|로그 저장 및 조회| B4
+  B5 -->|로그 조회| C3
+
+  %% 고가용성 및 무중단 배포
+  note right of B3
+    - Docker 컨테이너 기반
+    - 다중 인스턴스 운영
+    - 장애 시 자동 전환 및 롤백 지원
+  end
+```
