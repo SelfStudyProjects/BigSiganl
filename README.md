@@ -149,7 +149,7 @@ graph TD
     class I,J data;
 ```
 
-flowchart TD
+graph TD
   subgraph 고객사
     A1[고객사 캐시 테이블]
     A2[고객사 → Salesforce 매핑 결과 테이블]
@@ -192,8 +192,5 @@ flowchart TD
   B5 -->|로그 조회| C3
 
   %% 고가용성 및 무중단 배포
-  note right of B3
-    - Docker 컨테이너 기반
-    - 다중 인스턴스 운영
-    - 장애 시 자동 전환 및 롤백 지원
-  end
+  classDef note fill:#f9f,stroke:#333,stroke-width:2px,color:#000,font-weight:bold;
+  class B3 note;
