@@ -149,6 +149,7 @@ graph TD
     class I,J data;
 ```
 
+```mermaid
 graph TD
   subgraph 고객사
     A1[고객사 캐시 테이블]
@@ -170,7 +171,6 @@ graph TD
     C3[관리자 UI (매핑 설정 및 로그 조회)]
   end
 
-  %% 데이터 흐름 - 고객사 → Salesforce
   A1 -->|1. 이메일 발송 요청 저장| B4
   B4 -->|2. 데이터 매핑 및 변환| B1
   B1 -->|3. 매핑 결과 저장| A2
@@ -178,19 +178,9 @@ graph TD
   C2 -->|5. 발송 결과 저장| C1
   C1 -->|6. 결과 데이터 매핑| B1
   B1 -->|7. 매핑 결과 저장| A3
-
-  %% Salesforce → 고객사 데이터 흐름
   A3 -->|8. 고객사에서 발송 결과 조회| 고객사
-
-  %% API 및 UI
   C3 -->|매핑 설정 및 로그 조회| B2
   B2 -->|API 요청 처리| B3
   B3 -->|이메일 발송 처리| C2
-
-  %% 로깅 및 모니터링
   B5 -->|로그 저장 및 조회| B4
   B5 -->|로그 조회| C3
-
-  %% 고가용성 및 무중단 배포
-  classDef note fill:#f9f,stroke:#333,stroke-width:2px,color:#000,font-weight:bold;
-  class B3 note;
