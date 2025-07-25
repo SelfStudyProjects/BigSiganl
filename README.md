@@ -153,14 +153,14 @@ graph TD
 graph TD
   subgraph 고객사
     A1[고객사 캐시 테이블]
-    A2[고객사 → Salesforce 매핑 결과 테이블]
-    A3[Salesforce → 고객사 매핑 결과 테이블]
+    A2[고객사 --> Salesforce 매핑 결과 테이블]
+    A3[Salesforce --> 고객사 매핑 결과 테이블]
   end
 
   subgraph 미들웨어
     B1[데이터 매핑 및 변환]
     B2[REST API 서버]
-    B3[이메일 게이트웨이 서버 (Java / Docker)]
+    B3[이메일 게이트웨이 서버] %% 여기 이름을 간소화했어!
     B4[DB: 캐시 및 매핑 결과 저장]
     B5[로그 및 모니터링 시스템]
   end
@@ -171,7 +171,7 @@ graph TD
     C3[관리자 UI (매핑 설정 및 로그 조회)]
   end
 
-  %% 데이터 흐름 - 고객사 → Salesforce
+  %% 데이터 흐름 - 고객사 --> Salesforce
   A1 -->|1. 이메일 발송 요청 저장| B4
   B4 -->|2. 데이터 매핑 및 변환| B1
   B1 -->|3. 매핑 결과 저장| A2
@@ -180,7 +180,7 @@ graph TD
   C1 -->|6. 결과 데이터 매핑| B1
   B1 -->|7. 매핑 결과 저장| A3
 
-  %% Salesforce → 고객사 데이터 흐름
+  %% Salesforce --> 고객사 데이터 흐름
   A3 -->|8. 고객사에서 발송 결과 조회| 고객사
 
   %% API 및 UI
@@ -191,3 +191,4 @@ graph TD
   %% 로깅 및 모니터링
   B5 -->|로그 저장 및 조회| B4
   B5 -->|로그 조회| C3
+```
