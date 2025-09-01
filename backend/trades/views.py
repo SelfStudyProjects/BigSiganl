@@ -1,16 +1,26 @@
-from rest_framework import viewsets
-from .models import Trade
-from .serializers import TradeSerializer
+"""
+거래 관련 API 뷰
+"""
+CLASS TradeListView(ListCreateAPIView):
+    METHOD get():
+        FILTER trades by date range (optional)
+        FILTER by asset (optional)
+        ORDER by timestamp DESC
+        PAGINATE results
+        RETURN serialized data
+    
+    METHOD post():
+        VALIDATE incoming trade data
+        SAVE to database
+        TRIGGER portfolio recalculation
+        RETURN created trade
 
-class TradeViewSet(viewsets.ModelViewSet):
-    queryset = Trade.objects.all()
-    serializer_class = TradeSerializer
+CLASS TradeDetailView(RetrieveAPIView):
+    METHOD get():
+        GET trade by ID
+        RETURN serialized trade data
 
-    def perform_create(self, serializer):
-        serializer.save()
-
-    def perform_update(self, serializer):
-        serializer.save()
-
-    def perform_destroy(self, instance):
-        instance.delete()
+CLASS LatestTradesView(ListAPIView):
+    METHOD get():
+        GET last 20 trades
+        RETURN serialized data

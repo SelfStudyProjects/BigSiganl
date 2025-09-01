@@ -1,12 +1,22 @@
-from django.db import models
-
-class Trade(models.Model):
-    trade_id = models.AutoField(primary_key=True)
-    symbol = models.CharField(max_length=10)
-    quantity = models.DecimalField(max_digits=10, decimal_places=2)
-    price = models.DecimalField(max_digits=10, decimal_places=2)
-    trade_date = models.DateTimeField(auto_now_add=True)
-    trade_type = models.CharField(max_length=4, choices=[('BUY', 'Buy'), ('SELL', 'Sell')])
-
-    def __str__(self):
-        return f"{self.trade_type} {self.quantity} of {self.symbol} at {self.price} on {self.trade_date}"
+"""
+거래 데이터 모델
+"""
+CLASS Trade(Model):
+    FIELDS:
+        - id: AutoField
+        - timestamp: DateTimeField (거래 시점)
+        - asset: CharField (BTC, USDT, DOGE)
+        - action: CharField (BUY, SELL)
+        - price: DecimalField (거래 가격)
+        - percentage: DecimalField (매매 비율)
+        - base_currency: CharField (KRW)
+        - raw_message: TextField (원본 텔레그램 메시지)
+        - created_at: DateTimeField
+    
+    METHODS:
+        - __str__(): RETURN "{action} {asset} at {price}"
+        - get_absolute_url(): RETURN trade detail URL
+    
+    META:
+        - ordering: ['-timestamp']
+        - indexes: ['timestamp', 'asset', 'action']

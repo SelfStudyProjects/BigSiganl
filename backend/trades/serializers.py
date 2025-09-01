@@ -1,7 +1,23 @@
-from rest_framework import serializers
-from .models import Trade
+"""
+거래 데이터 시리얼라이저
+"""
+CLASS TradeSerializer(ModelSerializer):
+    FIELDS: all from Trade model
+    
+    METHOD validate_price():
+        IF price <= 0:
+            RAISE ValidationError
+        RETURN price
+    
+    METHOD validate_percentage():
+        IF percentage < 0 OR percentage > 100:
+            RAISE ValidationError
+        RETURN percentage
 
-class TradeSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Trade
-        fields = '__all__'  # or specify the fields you want to include, e.g., ['id', 'symbol', 'quantity', 'price', 'timestamp']
+CLASS TradeCreateSerializer(ModelSerializer):
+    FIELDS: exclude 'created_at'
+    
+    METHOD create():
+        VALIDATE incoming data
+        CREATE new Trade instance
+        RETURN created instance
