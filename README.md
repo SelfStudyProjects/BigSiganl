@@ -491,6 +491,26 @@ const PortfolioChart = ({ data, selectedPortfolios }) => {
 
 MIT License
 
----
+## 프로젝트 견적
 
-BigSignal 프로젝트는 암호화폐 시그널의 투명한 성과 분석을 통해 투자자들의 현명한 의사결정을 지원합니다. 모든 기술 스택이 검증된 기존 기술을 활용하여 빠른 개발과 안정적인 운영을 보장합니다.
+```mermaid
+graph TD
+    A[텔레그램 메시지 로그] --> B[데이터 수집/가공]
+    C[빗썸 API/데이터] --> B
+    B --> D[수익률 계산 및 DB 저장]
+    D --> E[시각화 데이터 준비]
+    E --> F[시각화 그래프 생성]
+    F --> G[시각화 자료 제공]
+    G --> H[프론트엔드]
+    H --> I[사용자]
+    J[관리자] --> H
+
+    classDef default fill:#f9f,stroke:#333,stroke-width:2px;
+    classDef data fill:#ccf,stroke:#333,stroke-width:2px;
+    classDef code fill:#cfc,stroke:#333,stroke-width:2px;
+    class A,C data;
+    class B,D,E,F code;
+    class G data;
+    class H code;
+    class I,J data;
+```
