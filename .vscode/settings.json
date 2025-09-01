@@ -1,0 +1,6 @@
+{
+    "github.copilot.enable": true,
+    "github.copilot.advanced": {
+        "model": "gpt-4"
+    }
+}
