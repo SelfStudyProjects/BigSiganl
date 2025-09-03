@@ -1,23 +1,28 @@
+from rest_framework import serializers
+from .models import Trade
+
 """
 거래 데이터 시리얼라이저
 """
-CLASS TradeSerializer(ModelSerializer):
-    FIELDS: all from Trade model
+class TradeSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Trade
+        fields = '__all__'
     
-    METHOD validate_price():
-        IF price <= 0:
-            RAISE ValidationError
-        RETURN price
+    def validate_price(self, value):
+        if value <= 0:
+            raise serializers.ValidationError("Price must be greater than 0")
+        return value
     
-    METHOD validate_percentage():
-        IF percentage < 0 OR percentage > 100:
-            RAISE ValidationError
-        RETURN percentage
+    def validate_percentage(self, value):
+        if value < 0 or value > 100:
+            raise serializers.ValidationError("Percentage must be between 0 and 100")
+        return value
 
-CLASS TradeCreateSerializer(ModelSerializer):
-    FIELDS: exclude 'created_at'
+class TradeCreateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Trade
+        exclude = ['created_at']
     
-    METHOD create():
-        VALIDATE incoming data
-        CREATE new Trade instance
-        RETURN created instance
+    def create(self, validated_data):
+        return Trade.objects.create(**validated_data)

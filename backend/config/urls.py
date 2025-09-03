@@ -1,7 +1,9 @@
+from django.contrib import admin
 from django.urls import path, include
 
 urlpatterns = [
-    path('trades/', include('backend.trades.urls')),
-    path('portfolios/', include('backend.portfolios.urls')),
-    path('analysis/', include('backend.analysis.urls')),
+    path('admin/', admin.site.urls),
+    path('api/trades/', include('trades.urls')),
+    path('api/portfolios/', include('portfolios.urls')),
+    path('api/analysis/', include('analysis.urls')),
 ]

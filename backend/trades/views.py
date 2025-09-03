@@ -1,26 +1,39 @@
+from rest_framework.generics import ListCreateAPIView, RetrieveAPIView, ListAPIView
+from rest_framework.filters import OrderingFilter
+# from django_filters.rest_framework import DjangoFilterBackend
+from .models import Trade
+from .serializers import TradeSerializer
+
 """
 거래 관련 API 뷰
 """
-CLASS TradeListView(ListCreateAPIView):
-    METHOD get():
-        FILTER trades by date range (optional)
-        FILTER by asset (optional)
-        ORDER by timestamp DESC
-        PAGINATE results
-        RETURN serialized data
+class TradeListView(ListCreateAPIView):
+    queryset = Trade.objects.all()
+    serializer_class = TradeSerializer
+    filter_backends = [OrderingFilter]
+    ordering_fields = ['timestamp', 'price']
+    ordering = ['-timestamp']
     
-    METHOD post():
-        VALIDATE incoming trade data
-        SAVE to database
-        TRIGGER portfolio recalculation
-        RETURN created trade
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        # 날짜 범위 필터링 (선택사항)
+        start_date = self.request.query_params.get('start_date')
+        end_date = self.request.query_params.get('end_date')
+        if start_date:
+            queryset = queryset.filter(timestamp__gte=start_date)
+        if end_date:
+            queryset = queryset.filter(timestamp__lte=end_date)
+        return queryset
+    
+    def perform_create(self, serializer):
+        # 거래 저장 후 포트폴리오 재계산 트리거 (나중에 구현)
+        serializer.save()
 
-CLASS TradeDetailView(RetrieveAPIView):
-    METHOD get():
-        GET trade by ID
-        RETURN serialized trade data
+class TradeDetailView(RetrieveAPIView):
+    queryset = Trade.objects.all()
+    serializer_class = TradeSerializer
 
-CLASS LatestTradesView(ListAPIView):
-    METHOD get():
-        GET last 20 trades
-        RETURN serialized data
+class LatestTradesView(ListAPIView):
+    queryset = Trade.objects.all()[:20]
+    serializer_class = TradeSerializer
+    ordering = ['-timestamp']
