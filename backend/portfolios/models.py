@@ -10,10 +10,10 @@ class Portfolio(models.Model):
     description = models.TextField(blank=True)
     assets = models.JSONField(default=list, help_text="['BTC', 'USDT']")
     initial_budget = models.DecimalField(max_digits=15, decimal_places=2, default=1000000)
-    current_value = models.DecimalField(max_digits=15, decimal_places=2)
-    pnl_absolute = models.DecimalField(max_digits=15, decimal_places=2)
-    pnl_percentage = models.DecimalField(max_digits=5, decimal_places=2)
-    cash_balance = models.DecimalField(max_digits=15, decimal_places=2)
+    current_value = models.DecimalField(max_digits=15, decimal_places=2, default=1000000)  # default 추가
+    pnl_absolute = models.DecimalField(max_digits=15, decimal_places=2, default=0)  # default 추가
+    pnl_percentage = models.DecimalField(max_digits=5, decimal_places=2, default=0)  # default 추가
+    cash_balance = models.DecimalField(max_digits=15, decimal_places=2, default=1000000)  # default 추가
     holdings = models.JSONField(default=dict, help_text="{'BTC': 0.1, 'USDT': 1000}")
     last_updated = models.DateTimeField(auto_now=True)
     is_active = models.BooleanField(default=True)
@@ -34,7 +34,7 @@ class Portfolio(models.Model):
         pass
 
 class PortfolioSnapshot(models.Model):
-    portfolio = models.ForeignKey(Portfolio, on_delete=models.CASCADE)
+    portfolio = models.ForeignKey(Portfolio, on_delete=models.CASCADE, related_name='snapshots')
     timestamp = models.DateTimeField()
     portfolio_value = models.DecimalField(max_digits=15, decimal_places=2)
     pnl_percentage = models.DecimalField(max_digits=5, decimal_places=2)

@@ -33,9 +33,9 @@ class PortfolioEngine:
                     'initial_budget': self.initial_budget,
                     'current_value': self.initial_budget,
                     'cash_balance': self.initial_budget,
-                    'holdings': {asset: Decimal('0') for asset in config['assets']},
-                    'pnl_absolute': Decimal('0'),
-                    'pnl_percentage': Decimal('0'),
+                    'holdings': {asset: 0.0 for asset in config['assets']},
+                    'pnl_absolute': 0.0,
+                    'pnl_percentage': 0.0,
                     'is_active': True
                 }
             )
@@ -117,7 +117,7 @@ class PortfolioEngine:
             quantity_bought = trade_amount / trade.price
             
             # 보유 자산 업데이트
-            current_holding = portfolio.holdings.get(trade.asset, Decimal('0'))
+            current_holding = portfolio.holdings.get(trade.asset, 0.0)
             portfolio.holdings[trade.asset] = current_holding + quantity_bought
             
             # 현금 차감
@@ -132,7 +132,7 @@ class PortfolioEngine:
         """
         매도 거래 실행
         """
-        current_holding = portfolio.holdings.get(trade.asset, Decimal('0'))
+        current_holding = portfolio.holdings.get(trade.asset, 0.0)
         trade_percentage = trade.percentage
         
         # 매도할 수량 계산
@@ -174,7 +174,7 @@ class PortfolioEngine:
         
         for asset, quantity in portfolio.holdings.items():
             if quantity > 0:
-                asset_price = current_prices.get(asset, Decimal('0'))
+                asset_price = current_prices.get(asset, 0.0)
                 total_value += quantity * asset_price
         
         # 값 업데이트
@@ -186,7 +186,7 @@ class PortfolioEngine:
                 Decimal('0.0001'), rounding=ROUND_HALF_UP
             )
         else:
-            portfolio.pnl_percentage = Decimal('0')
+            portfolio.pnl_percentage = 0.0
         
         portfolio.last_updated = timezone.now()
     
@@ -206,7 +206,7 @@ class PortfolioEngine:
             if latest_trade:
                 prices[asset] = latest_trade.price
             else:
-                prices[asset] = Decimal('0')
+                prices[asset] = 0.0
         
         return prices
     
@@ -233,9 +233,9 @@ class PortfolioEngine:
         """
         portfolio.current_value = portfolio.initial_budget
         portfolio.cash_balance = portfolio.initial_budget
-        portfolio.holdings = {asset: Decimal('0') for asset in portfolio.assets}
-        portfolio.pnl_absolute = Decimal('0')
-        portfolio.pnl_percentage = Decimal('0')
+        portfolio.holdings = {asset: 0.0 for asset in portfolio.assets}
+        portfolio.pnl_absolute = 0.0
+        portfolio.pnl_percentage = 0.0
         portfolio.last_updated = timezone.now()
         portfolio.save()
         

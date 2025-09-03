@@ -177,10 +177,17 @@ class PriceHistory(models.Model):
         return float(price_record.price) if price_record else 0
 
 @receiver(post_save, sender=Trade)
-def update_price_history_on_trade(sender, instance, created, **kwargs):
+def process_new_trade(sender, instance, created, **kwargs):
     """
-    새로운 Trade가 생성될 때마다 PriceHistory 업데이트
+    새로운 Trade가 생성될 때마다 실행
+    1. PriceHistory 업데이트
+    2. 포트폴리오 시뮬레이션 실행
     """
     if created:  # 새로 생성된 경우만
+        # 1. 가격 이력 업데이트
         from analysis.price_tracker import update_price_on_new_trade
         update_price_on_new_trade(instance)
+        
+        # 2. 포트폴리오 시뮬레이션 실행
+        from analysis.portfolio_engine import process_new_trade
+        process_new_trade(instance)
