@@ -1,5 +1,7 @@
 from django.db import models
 from django.core.validators import MinValueValidator, MaxValueValidator
+from django.db.models.signals import post_save
+from django.dispatch import receiver
 
 class Trade(models.Model):
     """
@@ -89,3 +91,96 @@ class Trade(models.Model):
         주어진 잔고에서 실제 거래할 금액/수량 계산
         """
         return available_balance * (self.percentage / 100)
+    
+class PriceHistory(models.Model):
+    """
+    각 자산의 가격 변동 추적
+    Trade 데이터를 기반으로 생성
+    """
+    ASSET_CHOICES = [
+        ('BTC', 'Bitcoin'),
+        ('USDT', 'Tether'),
+        ('DOGE', 'Dogecoin'),
+        ('USDC', 'USD Coin'),
+    ]
+    
+    asset = models.CharField(
+        max_length=10,
+        choices=ASSET_CHOICES,
+        verbose_name='자산명'
+    )
+    timestamp = models.DateTimeField(
+        verbose_name='시점',
+        help_text='가격이 기록된 시점'
+    )
+    price = models.DecimalField(
+        max_digits=15,
+        decimal_places=2,
+        verbose_name='가격 (KRW)',
+        help_text='해당 시점의 자산 가격'
+    )
+    price_change = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        default=0,
+        verbose_name='가격 변동 (KRW)',
+        help_text='이전 가격 대비 변동량'
+    )
+    price_change_percentage = models.DecimalField(
+        max_digits=8,
+        decimal_places=4,
+        default=0,
+        verbose_name='가격 변동률 (%)',
+        help_text='이전 가격 대비 변동률'
+    )
+    volume_indicator = models.DecimalField(
+        max_digits=5,
+        decimal_places=2,
+        default=0,
+        verbose_name='거래량 지표',
+        help_text='해당 시점의 거래 비율 (추정)'
+    )
+    source_trade = models.ForeignKey(
+        Trade,
+        on_delete=models.CASCADE,
+        verbose_name='소스 거래',
+        help_text='이 가격 데이터를 생성한 거래'
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        ordering = ['-timestamp']
+        indexes = [
+            models.Index(fields=['asset', 'timestamp']),
+            models.Index(fields=['timestamp']),
+        ]
+        unique_together = ['asset', 'timestamp', 'source_trade']
+        verbose_name = '가격 이력'
+        verbose_name_plural = '가격 이력 목록'
+    
+    def __str__(self):
+        return f"{self.asset} at {self.timestamp.strftime('%m-%d %H:%M')} - {self.price:,} KRW ({self.price_change_percentage:+.2f}%)"
+    
+    @classmethod
+    def get_latest_price(cls, asset):
+        """특정 자산의 최신 가격 반환"""
+        latest = cls.objects.filter(asset=asset).first()
+        return float(latest.price) if latest else 0
+    
+    @classmethod 
+    def get_price_at_time(cls, asset, timestamp):
+        """특정 시점의 자산 가격 반환 (가장 가까운 이전 시점)"""
+        price_record = cls.objects.filter(
+            asset=asset,
+            timestamp__lte=timestamp
+        ).first()
+        return float(price_record.price) if price_record else 0
+
+@receiver(post_save, sender=Trade)
+def update_price_history_on_trade(sender, instance, created, **kwargs):
+    """
+    새로운 Trade가 생성될 때마다 PriceHistory 업데이트
+    """
+    if created:  # 새로 생성된 경우만
+        from analysis.price_tracker import update_price_on_new_trade
+        update_price_on_new_trade(instance)
