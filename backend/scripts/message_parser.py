@@ -1,9 +1,9 @@
 import re
 import logging
 from datetime import datetime
-from django.utils import timezone
 
 logger = logging.getLogger(__name__)
+logging.basicConfig(level=logging.INFO)
 
 class BigSignalMessageParser:
     """
@@ -43,7 +43,8 @@ class BigSignalMessageParser:
                 return None  # HOLD는 실제 거래가 아니므로 저장하지 않음
             
             # 1-2. BUY/SELL 메시지 처리 (Buy BTC 📈 또는 Sell DOGE 📉)
-            trade_pattern = r'^(Buy|Sell)\s+([A-Z]+)\s*📈|📉'
+            # Use non-capturing group for emoji to avoid alternation capturing only emoji
+            trade_pattern = r'^(Buy|Sell)\s+([A-Z]+)\s*(?:📈|📉)'
             trade_match = re.search(trade_pattern, message_text, re.IGNORECASE | re.MULTILINE)
             
             if not trade_match:
@@ -291,7 +292,7 @@ score_3m=0
     
     for i, (test_name, message) in enumerate(test_cases, 1):
         print(f"\n=== 테스트 {i}: {test_name} ===")
-        result = parser.parse_message(message, timezone.now())
+        result = parser.parse_message(message, datetime.now())
         
         if result:
             success_count += 1
