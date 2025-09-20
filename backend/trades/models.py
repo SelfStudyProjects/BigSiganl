@@ -1,8 +1,8 @@
 from django.db import models
 from django.core.validators import MinValueValidator, MaxValueValidator
-# from django.db.models.signals import post_save  # 주석 처리
-# from django.dispatch import receiver  # 주석 처리
-# from analysis.portfolio_engine import process_new_trade  # 주석 처리
+from django.db.models.signals import post_save
+from django.dispatch import receiver
+from analysis.portfolio_engine import process_new_trade
 
 class Trade(models.Model):
     """
@@ -177,20 +177,23 @@ class PriceHistory(models.Model):
         ).first()
         return float(price_record.price) if price_record else 0
 
-# 포트폴리오 신호 처리 완전 비활성화 (나중에 다시 활성화)
-"""
-from django.db.models.signals import post_save
-from django.dispatch import receiver
-from analysis.portfolio_engine import process_new_trade
-
+# 포트폴리오 신호 처리 복구
 @receiver(post_save, sender=Trade)
-def process_new_trade(sender, instance, created, **kwargs):
+def process_new_trade_signal(sender, instance, created, **kwargs):
     if created:  # 새로 생성된 경우만
         # 1. 가격 이력 업데이트
         from analysis.price_tracker import update_price_on_new_trade
-        update_price_on_new_trade(instance)
+        try:
+            update_price_on_new_trade(instance)
+        except Exception as e:
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.warning(f"가격 이력 업데이트 실패: {e}")
         
         # 2. 포트폴리오 시뮬레이션 실행
-        from analysis.portfolio_engine import process_new_trade
-        process_new_trade(instance)
-"""
+        try:
+            process_new_trade(instance)
+        except Exception as e:
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.error(f"포트폴리오 처리 실패: {e}")
