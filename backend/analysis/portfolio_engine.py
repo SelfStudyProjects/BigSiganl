@@ -33,9 +33,9 @@ class PortfolioEngine:
                     'initial_budget': self.initial_budget,
                     'current_value': self.initial_budget,
                     'cash_balance': self.initial_budget,
-                    'holdings': {asset: Decimal('0') for asset in config['assets']},  # Decimal로 변경
-                    'pnl_absolute': Decimal('0'),  # Decimal로 변경
-                    'pnl_percentage': Decimal('0'),  # Decimal로 변경
+                    'holdings': {asset: 0.0 for asset in config['assets']},
+                    'pnl_absolute': Decimal('0'),
+                    'pnl_percentage': Decimal('0'),
                     'is_active': True
                 }
             )
@@ -98,9 +98,9 @@ class PortfolioEngine:
         매수 거래 실행
         """
         available_cash = portfolio.cash_balance
-        trade_percentage = Decimal(str(trade.percentage))  # Decimal로 변환
+        trade_percentage = Decimal(str(trade.percentage))
         
-        # 매수할 금액 계산 (모든 계산을 Decimal로)
+        # 매수할 금액 계산
         trade_amount = available_cash * (trade_percentage / Decimal('100'))
         
         # 현금이 충분한지 확인
@@ -116,9 +116,9 @@ class PortfolioEngine:
         if trade.price > 0:
             quantity_bought = trade_amount / Decimal(str(trade.price))
             
-            # 보유 자산 업데이트 (Decimal 타입 통일)
-            current_holding = Decimal(str(portfolio.holdings.get(trade.asset, 0)))
-            portfolio.holdings[trade.asset] = current_holding + quantity_bought
+            # 보유 자산 업데이트 (float로 저장)
+            current_holding = float(portfolio.holdings.get(trade.asset, 0))
+            portfolio.holdings[trade.asset] = current_holding + float(quantity_bought)
             
             # 현금 차감
             portfolio.cash_balance -= trade_amount
@@ -132,18 +132,18 @@ class PortfolioEngine:
         """
         매도 거래 실행
         """
-        current_holding = Decimal(str(portfolio.holdings.get(trade.asset, 0)))
-        trade_percentage = Decimal(str(trade.percentage))  # Decimal로 변환
+        current_holding = float(portfolio.holdings.get(trade.asset, 0))
+        trade_percentage = Decimal(str(trade.percentage))
         
-        # 매도할 수량 계산 (모든 계산을 Decimal로)
-        quantity_to_sell = current_holding * (trade_percentage / Decimal('100'))
+        # 매도할 수량 계산
+        quantity_to_sell = Decimal(str(current_holding)) * (trade_percentage / Decimal('100'))
         
         # 보유 수량이 충분한지 확인
-        if quantity_to_sell > current_holding:
-            quantity_to_sell = current_holding
+        if quantity_to_sell > Decimal(str(current_holding)):
+            quantity_to_sell = Decimal(str(current_holding))
         
         # 최소 매도 수량 체크
-        if quantity_to_sell <= Decimal('0.00000001'):  # 매우 작은 수량
+        if quantity_to_sell <= Decimal('0.00000001'):
             logger.debug(f"매도 수량이 너무 적음: {quantity_to_sell}")
             return False
         
@@ -151,8 +151,8 @@ class PortfolioEngine:
         if trade.price > 0:
             sell_amount = quantity_to_sell * Decimal(str(trade.price))
             
-            # 보유 자산 업데이트
-            portfolio.holdings[trade.asset] = current_holding - quantity_to_sell
+            # 보유 자산 업데이트 (float로 저장)
+            portfolio.holdings[trade.asset] = current_holding - float(quantity_to_sell)
             
             # 현금 추가
             portfolio.cash_balance += sell_amount
@@ -166,19 +166,22 @@ class PortfolioEngine:
         """
         포트폴리오 총 가치 및 손익 업데이트
         """
-        # 현재 시점의 자산 가격들 수집 (각 자산의 최신 거래 가격 사용)
+        # 현재 시점의 자산 가격들 수집
         current_prices = self.get_current_prices(trade.timestamp)
         
         # 총 가치 계산: 현금 + (각 자산 보유량 × 현재가)
-        total_value = portfolio.cash_balance
+        total_value = portfolio.cash_balance  # 이 라인이 먼저 와야 함!
         
         for asset, quantity in portfolio.holdings.items():
-            quantity_decimal = Decimal(str(quantity))  # Decimal로 변환
-            if quantity_decimal > 0:
+            if float(quantity) > 0:
                 asset_price = Decimal(str(current_prices.get(asset, 0)))
-                total_value += quantity_decimal * asset_price
+                asset_value = Decimal(str(quantity)) * asset_price
+                total_value += asset_value
+                logger.debug(f"자산 계산 - {asset}: {quantity} × {asset_price} = {asset_value}")
         
-        # 값 업데이트 (모든 계산 결과를 Decimal로)
+        logger.debug(f"포트폴리오 {portfolio.name} 총 가치 계산: {total_value}")
+        
+        # 값 업데이트
         portfolio.current_value = total_value.quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
         portfolio.pnl_absolute = portfolio.current_value - portfolio.initial_budget
         
@@ -194,7 +197,6 @@ class PortfolioEngine:
     def get_current_prices(self, timestamp):
         """
         주어진 시점의 각 자산 가격 조회
-        해당 시점 이전의 가장 최근 거래 가격 사용
         """
         prices = {}
         
@@ -207,7 +209,7 @@ class PortfolioEngine:
             if latest_trade:
                 prices[asset] = latest_trade.price
             else:
-                prices[asset] = Decimal('0')  # Decimal로 변경
+                prices[asset] = Decimal('0')
         
         return prices
     
@@ -215,16 +217,13 @@ class PortfolioEngine:
         """
         포트폴리오 스냅샷 생성
         """
-        # holdings를 Decimal에서 float로 변환 (JSON 저장용)
-        holdings_for_json = {k: float(v) for k, v in portfolio.holdings.items()}
-        
         snapshot = PortfolioSnapshot.objects.create(
             portfolio=portfolio,
             timestamp=timestamp,
             portfolio_value=portfolio.current_value,
             pnl_percentage=portfolio.pnl_percentage,
             cash_balance=portfolio.cash_balance,
-            holdings=holdings_for_json,  # float로 변환된 딕셔너리
+            holdings=dict(portfolio.holdings),
             trade_triggered_by=triggering_trade
         )
         
@@ -237,9 +236,9 @@ class PortfolioEngine:
         """
         portfolio.current_value = portfolio.initial_budget
         portfolio.cash_balance = portfolio.initial_budget
-        portfolio.holdings = {asset: Decimal('0') for asset in portfolio.assets}  # Decimal로 변경
-        portfolio.pnl_absolute = Decimal('0')  # Decimal로 변경
-        portfolio.pnl_percentage = Decimal('0')  # Decimal로 변경
+        portfolio.holdings = {asset: 0.0 for asset in portfolio.assets}
+        portfolio.pnl_absolute = Decimal('0')
+        portfolio.pnl_percentage = Decimal('0')
         portfolio.last_updated = timezone.now()
         portfolio.save()
         

@@ -2,7 +2,6 @@ from django.db import models
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django.db.models.signals import post_save
 from django.dispatch import receiver
-from analysis.portfolio_engine import process_new_trade
 
 class Trade(models.Model):
     """
@@ -177,23 +176,28 @@ class PriceHistory(models.Model):
         ).first()
         return float(price_record.price) if price_record else 0
 
-# 포트폴리오 신호 처리 복구
+# 포트폴리오 신호 처리 - 지연 import로 순환 참조 해결
 @receiver(post_save, sender=Trade)
 def process_new_trade_signal(sender, instance, created, **kwargs):
     if created:  # 새로 생성된 경우만
-        # 1. 가격 이력 업데이트
-        from analysis.price_tracker import update_price_on_new_trade
+        import logging
+        logger = logging.getLogger(__name__)
+        
+        # 1. 가격 이력 업데이트 (지연 import)
         try:
+            from analysis.price_tracker import update_price_on_new_trade
             update_price_on_new_trade(instance)
+        except ImportError:
+            logger.warning("price_tracker 모듈을 찾을 수 없습니다")
         except Exception as e:
-            import logging
-            logger = logging.getLogger(__name__)
             logger.warning(f"가격 이력 업데이트 실패: {e}")
         
-        # 2. 포트폴리오 시뮬레이션 실행
+        # 2. 포트폴리오 시뮬레이션 실행 (지연 import)
         try:
+            from analysis.portfolio_engine import process_new_trade
             process_new_trade(instance)
+            logger.info(f"포트폴리오 처리 완료: {instance}")
+        except ImportError as e:
+            logger.error(f"portfolio_engine 모듈 import 실패: {e}")
         except Exception as e:
-            import logging
-            logger = logging.getLogger(__name__)
             logger.error(f"포트폴리오 처리 실패: {e}")
