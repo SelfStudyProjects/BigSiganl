@@ -1,7 +1,8 @@
 from django.db import models
 from django.core.validators import MinValueValidator, MaxValueValidator
-from django.db.models.signals import post_save
-from django.dispatch import receiver
+# from django.db.models.signals import post_save  # 주석 처리
+# from django.dispatch import receiver  # 주석 처리
+# from analysis.portfolio_engine import process_new_trade  # 주석 처리
 
 class Trade(models.Model):
     """
@@ -176,13 +177,14 @@ class PriceHistory(models.Model):
         ).first()
         return float(price_record.price) if price_record else 0
 
+# 포트폴리오 신호 처리 완전 비활성화 (나중에 다시 활성화)
+"""
+from django.db.models.signals import post_save
+from django.dispatch import receiver
+from analysis.portfolio_engine import process_new_trade
+
 @receiver(post_save, sender=Trade)
 def process_new_trade(sender, instance, created, **kwargs):
-    """
-    새로운 Trade가 생성될 때마다 실행
-    1. PriceHistory 업데이트
-    2. 포트폴리오 시뮬레이션 실행
-    """
     if created:  # 새로 생성된 경우만
         # 1. 가격 이력 업데이트
         from analysis.price_tracker import update_price_on_new_trade
@@ -191,3 +193,4 @@ def process_new_trade(sender, instance, created, **kwargs):
         # 2. 포트폴리오 시뮬레이션 실행
         from analysis.portfolio_engine import process_new_trade
         process_new_trade(instance)
+"""

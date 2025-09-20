@@ -1,16 +1,20 @@
 import os
 from pathlib import Path
+from dotenv import load_dotenv
+
+# .env 파일 로드
+load_dotenv()
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-your-secret-key-here'
+SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-fallback-key-change-this')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.getenv('DEBUG', 'True').lower() == 'true'
 
-ALLOWED_HOSTS = ['localhost', '127.0.0.1']
+ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
 
 # Application definition
 INSTALLED_APPS = [
@@ -117,10 +121,10 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 # CORS_ALLOW_CREDENTIALS = True
 
 # Telegram settings
-TELEGRAM_API_ID = ''
-TELEGRAM_API_HASH = ''
-TELEGRAM_PHONE = ''
-TELEGRAM_CHANNEL_ID = ''
+TELEGRAM_API_ID = os.getenv('TELEGRAM_API_ID', '')
+TELEGRAM_API_HASH = os.getenv('TELEGRAM_API_HASH', '')
+TELEGRAM_PHONE = os.getenv('TELEGRAM_PHONE', '')
+TELEGRAM_CHANNEL_ID = os.getenv('TELEGRAM_CHANNEL_ID', '')
 
 # BigSignal specific settings
 INITIAL_PORTFOLIO_BUDGET = 1000000  # 100만원
