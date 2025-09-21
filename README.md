@@ -352,12 +352,173 @@ firebase deploy
 - `GET /api/portfolios/{id}/performance/` - 포트폴리오 성과 데이터
 - `GET /api/portfolios/comparison/` - Buy & Hold 비교 데이터
 
-### 분석 관련
-- `GET /api/analysis/performance/` - 포트폴리오 성과 비교
+### 분석 관련 (신규)
+- `GET /api/analysis/dashboard-summary/` - 대시보드 요약
+- `GET /api/analysis/charts/<chart_name>/` - 차트 이미지
+- `POST /api/analysis/regenerate-charts/` - 차트 재생성
+
+## 데이터 모델
+
+### Trade 모델
+```python
+class Trade(models.Model):
+    timestamp = models.DateTimeField()
+    asset = models.CharField(max_length=10)  # BTC, USDT, DOGE, USDC
+    action = models.CharField(max_length=4, choices=[
+        ('BUY', 'Buy'),
+        ('SELL', 'Sell')
+    ])
+    price = models.DecimalField(max_digits=15, decimal_places=2)
+    percentage = models.DecimalField(max_digits=5, decimal_places=2)
+    base_currency = models.CharField(max_length=3, default='KRW')
+    raw_message = models.TextField()  # 원본 텔레그램 메시지
+    created_at = models.DateTimeField(auto_now_add=True)
+```
+
+### Portfolio 모델
+```python
+class Portfolio(models.Model):
+    name = models.CharField(max_length=100)  # BTC_Only, BTC_USDT 등
+    description = models.TextField(blank=True)
+    assets = models.JSONField(default=list)  # ['BTC', 'USDT'] 등
+    initial_budget = models.DecimalField(max_digits=15, decimal_places=2, default=1000000)
+    current_value = models.DecimalField(max_digits=15, decimal_places=2, default=1000000)
+    pnl_absolute = models.DecimalField(max_digits=15, decimal_places=2, default=0)
+    pnl_percentage = models.DecimalField(max_digits=5, decimal_places=2, default=0)
+    cash_balance = models.DecimalField(max_digits=15, decimal_places=2, default=1000000)
+    holdings = models.JSONField(default=dict)  # {'BTC': 0.1, 'USDT': 1000}
+    last_updated = models.DateTimeField(auto_now=True)
+    is_active = models.BooleanField(default=True)
+    
+    # 호환성 프로퍼티
+    @property
+    def profit_loss_percentage(self):
+        return float(self.pnl_percentage)
+```
+
+### PortfolioSnapshot 모델
+```python
+class PortfolioSnapshot(models.Model):
+    portfolio = models.ForeignKey(Portfolio, on_delete=models.CASCADE)
+    timestamp = models.DateTimeField()
+    portfolio_value = models.DecimalField(max_digits=15, decimal_places=2)
+    pnl_percentage = models.DecimalField(max_digits=5, decimal_places=2)
+    cash_balance = models.DecimalField(max_digits=15, decimal_places=2)
+    holdings = models.JSONField(default=dict)  # {'BTC': 0.1, 'USDT': 1000}
+    trade_triggered_by = models.ForeignKey(Trade, on_delete=models.SET_NULL, null=True)
+```
+
+## 운영 가이드
+
+### 일일 운영 체크리스트
+
+1. **텔레그램 수집기 상태 확인**
+```bash
+# 실시간 수집기가 실행 중인지 확인
+ps aux | grep telegram_collector
+```
+
+2. **데이터 무결성 검사**
+```bash
+# 매일 또는 주간 단위로 실행
+python scripts/validate_data.py
+```
+
+3. **차트 업데이트**
+```bash
+# 새로운 거래 데이터가 있으면 차트 재생성
+python analysis/chart_generator.py
+```
+
+4. **현황 리포트 확인**
+```bash
+# 빠른 현황 체크
+python scripts/print_portfolio_report.py
+```
+
+### 문제 해결 가이드
+
+**1. 텔레그램 수집 중단 시:**
+```bash
+# 세션 파일 확인
+ls -la *.session
+
+# 수집기 재시작
+python scripts/telegram_collector.py
+```
+
+**2. 포트폴리오 계산 오류 시:**
+```bash
+# 전체 포트폴리오 재계산
+python manage.py shell
+>>> from analysis.portfolio_engine import recalculate_all_portfolios
+>>> recalculate_all_portfolios()
+```
+
+**3. 데이터베이스 백업:**
+```bash
+# SQLite 백업
+cp db.sqlite3 backup/db_$(date +%Y%m%d).sqlite3
+
+# PostgreSQL 백업
+pg_dump bigsignal > backup/bigsignal_$(date +%Y%m%d).sql
+```
+
+## 성능 최적화
+
+### 데이터베이스 최적화
+- Trade 모델의 timestamp, asset 컬럼에 인덱스 추가
+- PortfolioSnapshot의 timestamp, portfolio 컬럼에 인덱스 추가
+- 대용량 데이터 처리 시 pagination 적용
+
+### 메모리 최적화
+- 큰 쿼리 결과 처리 시 iterator() 사용
+- 차트 생성 후 matplotlib 객체 명시적 해제
+- 텔레그램 클라이언트 연결 재사용
+
+## 보안 고려사항
+
+### 텔레그램 API 보안
+- API 키는 환경변수로만 관리
+- 세션 파일 권한 제한 (600)
+- 프로덕션 환경에서 DEBUG=False 설정
+
+### 데이터 보안
+- 원본 텔레그램 메시지는 개인정보 제거 후 저장
+- API 엔드포인트에 적절한 인증 추가 (프로덕션)
+- 정기적인 데이터베이스 백업
+
+## 라이선스
+
+MIT License
+
+## 기여 가이드
+
+### 개발 환경 설정
+1. Fork 후 로컬 클론
+2. 가상환경 생성 및 의존성 설치
+3. 테스트 실행: `python manage.py test`
+4. 코드 스타일: PEP 8 준수
+
+### 커밋 메시지 컨벤션
+```
+feat: 새로운 기능 추가
+fix: 버그 수정
+docs: 문서 수정
+style: 코드 스타일 변경
+refactor: 코드 리팩토링
+test: 테스트 추가/수정
+```
+
+## 연락처
+
+프로젝트 관련 문의나 버그 리포트는 GitHub Issues를 이용해주세요.
+
+---
+
+BigSignal 프로젝트는 암호화폐 시그널의 투명한 성과 분석을 통해 투자자들의 현명한 의사결정을 지원합니다. 실제 데이터 기반의 객관적 분석으로 시그널 서비스의 진정한 가치를 측정할 수 있습니다.performance/` - 포트폴리오 성과 비교
 - `GET /api/analysis/timeline/` - 시간별 가치 변화
 - `GET /api/analysis/trading-stats/` - 거래 통계
 - `GET /api/analysis/risk-metrics/` - 리스크 메트릭
 - `GET /api/analysis/buy-hold-comparison/` - Buy & Hold 비교
-- `GET /api/analysis/`dashboard-summary/` - 대시보드 요약
-- `GET /api/analysis/charts/{chart_name}/` - 차트 이미지
-- `POST /api/analysis/regenerate-charts/` - 차트 재생성
+- `GET /api/analysis/dashboard-summary/` - 대시보드 요약
