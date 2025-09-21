@@ -33,6 +33,23 @@ class Portfolio(models.Model):
         # 보유 자산 업데이트
         pass
 
+    # Backwards-compatible property: older code expected `profit_loss_percentage`
+    @property
+    def profit_loss_percentage(self):
+        """Compatibility alias for pnl_percentage (returns float)."""
+        try:
+            return float(self.pnl_percentage)
+        except Exception:
+            return 0.0
+
+    # Keep `current_value` as DecimalField on the model; optionally expose as float
+    @property
+    def current_value_float(self):
+        try:
+            return float(self.current_value)
+        except Exception:
+            return float(self.initial_budget or 0)
+
 class PortfolioSnapshot(models.Model):
     portfolio = models.ForeignKey(Portfolio, on_delete=models.CASCADE, related_name='snapshots')
     timestamp = models.DateTimeField()
@@ -51,3 +68,5 @@ class PortfolioSnapshot(models.Model):
     
     def __str__(self):
         return f"{self.portfolio.name} at {self.timestamp}"
+
+    # --- Backwards-compatible alias properties on Portfolio ---

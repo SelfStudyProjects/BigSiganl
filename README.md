@@ -128,6 +128,69 @@ cd scripts
 python telegram_collector.py
 ```
 
+## 최근 변경사항 및 중요 안내 (핫픽스)
+
+아래는 최근 개발 진행 중에 반영된 변경사항과 운영 시 주의할 점입니다. 개발/운영 환경에서 바로 적용 가능하도록 사용법과 원인, 해결 방법을 함께 정리합니다.
+
+1) 메시지 파서(message_parser.py) 개선
+- 문제: 일부 텔레그램 메시지의 이모지 처리(📈/📉)로 정규표현식이 잘못 캡처되어 파싱 실패가 발생했습니다.
+- 해결: 이모지 부분을 비캡처 그룹으로 변경하여 캡처 그룹이 항상 action/asset을 올바르게 반환하도록 수정했습니다.
+- 스크립트 경로: `backend/scripts/message_parser.py`
+
+2) 스크립트 독립 실행성 개선
+- 문제: 테스트 스크립트가 `django.utils.timezone.now()`를 사용해 Django 설정이 필요했습니다(ImproperlyConfigured 오류).
+- 해결: 테스트용 스크립트에서 `datetime.now()`로 대체하여 단독 실행이 가능하도록 수정했습니다.
+- 테스트 스크립트: `backend/scripts/message_parser.py` (로컬에서 바로 실행 가능)
+
+3) 과거 메시지 수집기(collect_history.py)에서 채널 식별 문제 해결
+- 문제: `.env`의 `TELEGRAM_CHANNEL_ID` 값이 Telethon의 `get_entity()`에서 바로 해석되지 않아 `Could not find the input entity for PeerUser(...)` 오류 발생.
+- 해결: 채널 식별 로직을 강화했습니다. (숫자 id 시도 → 문자열(username) 시도 → dialogs 순회 탐색)
+- 스크립트 경로: `backend/scripts/collect_history.py`
+- 권장: `.env`에 채널 식별자는 가능하면 `-1001234567890` 형태(채널 id) 혹은 정확한 username(`@BigSignalChannel`)을 사용하세요.
+
+4) 대화 목록 도움 스크립트 추가
+- 목적: 올바른 채널 식별자(id 또는 username)를 찾기 위한 유틸
+- 스크립트: `backend/scripts/list_telegram_dialogs.py`
+- 사용법:
+    ```powershell
+    cd c:\BIGSIGNAL\backend
+    .\.venv\Scripts\python.exe scripts\list_telegram_dialogs.py
+    ```
+    출력에서 원하는 채널의 `id`, `username`, `title`을 복사해 `.env`의 `TELEGRAM_CHANNEL_ID`에 넣으세요.
+
+5) 포트폴리오 모델 호환성 (필드 alias)
+- 변경: 기존 코드가 기대하던 `profit_loss_percentage` 같은 이름이 모델에 없어서 오류가 발생하던 것을 호환성 프로퍼티로 보완했습니다.
+    - 모델 필드(데이터베이스)는 `pnl_percentage`, `current_value` 등 DecimalField로 유지합니다.
+    - 편의용 프로퍼티: `profit_loss_percentage`(float 반환), `current_value_float`(float 반환)을 추가했습니다.
+- 참고: 모델 파일 경로 `backend/portfolios/models.py`
+
+6) 리포트 편의 스크립트 추가
+- 목적: 인터랙티브 셸에서 들여쓰기나 복사/붙여넣기 오류 없이 동일한 정보를 출력하기 위한 스크립트입니다.
+- 스크립트: `backend/scripts/print_portfolio_report.py`
+- 사용법:
+    ```powershell
+    cd c:\BIGSIGNAL\backend
+    .\.venv\Scripts\python.exe scripts\print_portfolio_report.py
+    ```
+    출력: 총 거래 수, 첫/마지막 거래 시각, 포트폴리오별 현황, 자산별 거래 수
+
+## 디버깅 팁
+- Telethon으로 수집 시 `Could not find the input entity` 오류가 나면:
+    1. `.env`의 `TELEGRAM_CHANNEL_ID` 값을 확인 (username인지 numeric id인지)
+    2. `list_telegram_dialogs.py` 실행 후 정확한 식별자 사용
+    3. private 채널의 경우 bot/session 계정이 채널의 멤버여야 함
+
+## 변경된 파일 목록 (요약)
+- `backend/scripts/message_parser.py`  — 파서 안정화 (emoji 정규식, timezone 제거)
+- `backend/scripts/collect_history.py` — 채널 탐색 로직 보강 (id/username/iter_dialogs)
+- `backend/scripts/list_telegram_dialogs.py` — 대화 목록 유틸(새 파일)
+- `backend/scripts/print_portfolio_report.py` — 리포트 유틸(새 파일)
+- `backend/portfolios/models.py` — 호환성 프로퍼티 추가 (`profit_loss_percentage`, `current_value_float`)
+
+---
+
+위 변경사항은 개발 편의성과 안정성 향상을 위한 핫픽스입니다. 원하면 이 내용을 README 상단에 더 눈에 띄게 노출시키거나, 별도의 CHANGELOG.md로 관리하도록 정리해드릴게요.
+
 ## 배포 가이드
 
 ### AWS EC2 Django 배포
