@@ -103,30 +103,35 @@ def recalculate_all_portfolios():
     print("\n=== 포트폴리오 재계산 ===")
     
     try:
-        from analysis.portfolio_engine import PortfolioEngine
+        # 실제 포트폴리오 엔진 사용
+        from analysis.portfolio_engine import recalculate_system
         
-        # 포트폴리오 엔진 초기화
-        engine = PortfolioEngine()
-        
-        # 모든 거래를 시간순으로 정렬하여 재계산
         trades = Trade.objects.all().order_by('timestamp')
         print(f"총 {trades.count()}개 거래로 포트폴리오 재계산 시작...")
         
-        # 재계산 실행
-        engine.process_all_trades(trades)
-        
-        print("✅ 포트폴리오 재계산 완료")
+        # 실제 엔진 재계산 실행
+        recalculate_system()
+        print("✅ 포트폴리오 엔진으로 재계산 완료")
         
         # 결과 출력
+        print("\n재계산 후 포트폴리오 현황:")
         for portfolio in Portfolio.objects.all():
-            print(f"{portfolio.name}: {portfolio.profit_loss_percentage:.2f}%")
+            try:
+                pnl_pct = float(portfolio.profit_loss_percentage)
+            except:
+                pnl_pct = 0.0
+            print(f"{portfolio.name}: {pnl_pct:.2f}%")
             
-    except ImportError:
-        print("❌ portfolio_engine 모듈을 찾을 수 없습니다.")
-        print("대신 수동으로 포트폴리오를 재계산하세요:")
+    except Exception as e:
+        print(f"❌ 포트폴리오 재계산 오류: {e}")
+        import traceback
+        traceback.print_exc()
+        
+        # 대안 제시
+        print("\n대신 Django shell에서 직접 실행하세요:")
         print("python manage.py shell")
-        print(">>> from analysis.portfolio_engine import recalculate_all_portfolios")
-        print(">>> recalculate_all_portfolios()")
+        print(">>> from analysis.portfolio_engine import recalculate_system")
+        print(">>> recalculate_system()")
 
 def generate_trade_timeline():
     """거래 타임라인 생성"""
