@@ -25,9 +25,14 @@ from portfolios.models import Portfolio, PortfolioSnapshot
 from django.db.models import Q
 from django.utils import timezone
 
-# 한글 폰트 설정 (윈도우)
-plt.rcParams['font.family'] = ['Malgun Gothic', 'DejaVu Sans']
-plt.rcParams['axes.unicode_minus'] = False
+try:
+    # 한글 폰트 설정 시도
+    plt.rcParams['font.family'] = ['Malgun Gothic', 'NanumGothic', 'DejaVu Sans']
+    plt.rcParams['axes.unicode_minus'] = False
+except:
+    # 한글 폰트가 없으면 영어로 대체
+    plt.rcParams['font.family'] = ['DejaVu Sans']
+    print("⚠️ 한글 폰트를 찾을 수 없어 영어로 표시됩니다.")
 
 # 스타일 설정
 sns.set_style("whitegrid")
@@ -95,10 +100,10 @@ class BigSignalChartGenerator:
         print("📈 포트폴리오 성과 비교 차트 생성 중...")
         
         # 데이터 수집
-        portfolios = Portfolio.objects.all().order_by('-profit_loss_percentage')
+        portfolios = Portfolio.objects.all().order_by('-pnl_percentage')
         
         names = [p.name.replace('_', ' ') for p in portfolios]
-        returns = [float(p.profit_loss_percentage) for p in portfolios]
+        returns = [float(p.pnl_percentage) for p in portfolios]
         colors = [self.portfolio_colors.get(p.name, '#999999') for p in portfolios]
         
         # 차트 생성
@@ -149,8 +154,8 @@ class BigSignalChartGenerator:
             data.append({
                 'timestamp': snapshot.timestamp,
                 'portfolio': snapshot.portfolio.name,
-                'value': float(snapshot.total_value),
-                'profit_loss_pct': float(snapshot.profit_loss_percentage)
+                'value': float(snapshot.portfolio_value),
+                'profit_loss_pct': float(snapshot.pnl_percentage)
             })
         
         df = pd.DataFrame(data)
@@ -309,7 +314,7 @@ class BigSignalChartGenerator:
             if snapshots.count() < 2:
                 continue
             
-            returns = [float(s.profit_loss_percentage) for s in snapshots]
+            returns = [float(s.pnl_percentage) for s in snapshots]
             
             avg_return = np.mean(returns)
             volatility = np.std(returns) if len(returns) > 1 else 0
@@ -318,7 +323,7 @@ class BigSignalChartGenerator:
                 'name': portfolio.name,
                 'return': avg_return,
                 'risk': volatility,
-                'current_return': float(portfolio.profit_loss_percentage)
+                'current_return': float(portfolio.pnl_percentage)
             })
         
         if not portfolio_metrics:
@@ -387,7 +392,7 @@ class BigSignalChartGenerator:
         # BigSignal 전략 수익률
         bigsignal_returns = {}
         for portfolio in Portfolio.objects.all():
-            bigsignal_returns[portfolio.name] = float(portfolio.profit_loss_percentage)
+            bigsignal_returns[portfolio.name] = float(portfolio.pnl_percentage)
         
         # 차트 생성
         fig, ax = plt.subplots(figsize=(12, 8))
@@ -440,8 +445,8 @@ class BigSignalChartGenerator:
         portfolios = Portfolio.objects.all()
         
         # 최고/최저 성과 포트폴리오
-        best_portfolio = portfolios.order_by('-profit_loss_percentage').first()
-        worst_portfolio = portfolios.order_by('profit_loss_percentage').first()
+        best_portfolio = portfolios.order_by('-pnl_percentage').first()
+        worst_portfolio = portfolios.order_by('pnl_percentage').first()
         
         # 자산별 거래 수
         from django.db.models import Count
@@ -469,9 +474,9 @@ class BigSignalChartGenerator:
 🏆 성과 순위
 """
         
-        for i, portfolio in enumerate(portfolios.order_by('-profit_loss_percentage'), 1):
+        for i, portfolio in enumerate(portfolios.order_by('-pnl_percentage'), 1):
             status = "🥇" if i == 1 else "🥈" if i == 2 else "🥉" if i == 3 else f"{i}위"
-            report += f"{status} {portfolio.name.replace('_', ' ')}: {portfolio.profit_loss_percentage:.2f}%\n"
+            report += f"{status} {portfolio.name.replace('_', ' ')}: {portfolio.pnl_percentage:.2f}%\n"
         
         report += f"""
 📊 자산별 거래 분포
@@ -481,9 +486,9 @@ class BigSignalChartGenerator:
         
         report += f"""
 💡 주요 인사이트
-- 최고 성과 전략: {best_portfolio.name.replace('_', ' ')} ({best_portfolio.profit_loss_percentage:.2f}%)
-- 최저 성과 전략: {worst_portfolio.name.replace('_', ' ')} ({worst_portfolio.profit_loss_percentage:.2f}%)
-- 성과 차이: {best_portfolio.profit_loss_percentage - worst_portfolio.profit_loss_percentage:.2f}%p
+- 최고 성과 전략: {best_portfolio.name.replace('_', ' ')} ({best_portfolio.pnl_percentage:.2f}%)
+- 최저 성과 전략: {worst_portfolio.name.replace('_', ' ')} ({worst_portfolio.pnl_percentage:.2f}%)
+- 성과 차이: {best_portfolio.profit_loss_percentage - worst_portfolio.pnl_percentage:.2f}%p
 
 📁 생성된 차트
 - portfolio_performance.png: 전략별 수익률 비교
