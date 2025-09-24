@@ -1,38 +1,27 @@
-/*
-메인 애플리케이션 컴포넌트
-*/
-IMPORT React, useState, useEffect
-IMPORT Dashboard, Header
-IMPORT api from services
+// src/App.js 수정
+import React from 'react';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import LandingPage from './pages/LandingPage';
+import AnalysisPage from './pages/AnalysisPage';
+import Header from './components/Common/Header';
+import Footer from './components/Common/Footer';
+import './App.css';
 
-FUNCTION App():
-    STATE portfolios = []
-    STATE loading = true
-    STATE error = null
-    
-    EFFECT on component mount:
-        CALL fetchInitialData()
-        SET interval for data refresh (30 seconds)
-        RETURN cleanup function
-    
-    FUNCTION fetchInitialData():
-        TRY:
-            SET loading = true
-            data = AWAIT api.getPortfolios()
-            SET portfolios = data
-            SET loading = false
-        CATCH error:
-            SET error = error message
-            SET loading = false
-    
-    IF loading:
-        RETURN loading spinner
-    
-    IF error:
-        RETURN error message
-    
-    RETURN:
-        <div className="app">
-            <Header />
-            <Dashboard portfolios={portfolios} />
-        </div>
+function App() {
+  return (
+    <Router>
+      <div className="App">
+        <Header />
+        <main>
+          <Routes>
+            <Route path="/" element={<LandingPage />} />
+            <Route path="/analysis" element={<AnalysisPage />} />
+          </Routes>
+        </main>
+        <Footer />
+      </div>
+    </Router>
+  );
+}
+
+export default App;

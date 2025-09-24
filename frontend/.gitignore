@@ -1,17 +1,5 @@
 # See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 
-# upload
-/uploads
-
-# .env
-.env
-
-# fetch_telegram_trades
-/analysis/fetch_telegram_trades
-
-# database
-/database.json
-
 # dependencies
 /node_modules
 /.pnp
@@ -33,7 +21,3 @@
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
-
-.env
-*.log
-media/charts/*
