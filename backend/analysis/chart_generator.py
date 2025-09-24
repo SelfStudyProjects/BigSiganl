@@ -25,14 +25,24 @@ from portfolios.models import Portfolio, PortfolioSnapshot
 from django.db.models import Q
 from django.utils import timezone
 
+# 한글 폰트 문제 해결
 try:
-    # 한글 폰트 설정 시도
-    plt.rcParams['font.family'] = ['Malgun Gothic', 'NanumGothic', 'DejaVu Sans']
+    # Windows에서 한글 폰트 찾기
+    import matplotlib.font_manager as fm
+    font_list = [f.name for f in fm.fontManager.ttflist if 'gothic' in f.name.lower() or 'malgun' in f.name.lower()]
+    
+    if font_list:
+        plt.rcParams['font.family'] = font_list[0]
+        print(f"한글 폰트 설정 완료: {font_list[0]}")
+    else:
+        # 한글 폰트가 없으면 영어로 대체하고 제목도 영어로 변경
+        plt.rcParams['font.family'] = ['DejaVu Sans']
+        print("⚠️ 한글 폰트를 찾을 수 없어 영어로 표시됩니다.")
+    
     plt.rcParams['axes.unicode_minus'] = False
-except:
-    # 한글 폰트가 없으면 영어로 대체
+except Exception as e:
     plt.rcParams['font.family'] = ['DejaVu Sans']
-    print("⚠️ 한글 폰트를 찾을 수 없어 영어로 표시됩니다.")
+    print("⚠️ 폰트 설정 실패, 기본 폰트 사용")
 
 # 스타일 설정
 sns.set_style("whitegrid")
@@ -57,6 +67,9 @@ class BigSignalChartGenerator:
             'USDT_DOGE': '#7B68EE',     # 슬레이트 블루
             'BTC_USDT_DOGE': '#FF1744'  # 레드
         }
+        
+        # 한글 폰트 사용 가능 여부 확인
+        self.use_korean = 'DejaVu Sans' not in str(plt.rcParams['font.family'])
         
         print("📊 BigSignal 차트 생성기 초기화 완료")
     
@@ -99,7 +112,7 @@ class BigSignalChartGenerator:
         """
         print("📈 포트폴리오 성과 비교 차트 생성 중...")
         
-        # 데이터 수집
+        # 데이터 수집 - 실제 DB 필드명 사용
         portfolios = Portfolio.objects.all().order_by('-pnl_percentage')
         
         names = [p.name.replace('_', ' ') for p in portfolios]
@@ -117,10 +130,19 @@ class BigSignalChartGenerator:
                    f'{return_val:.1f}%', ha='center', va='bottom' if height >= 0 else 'top',
                    fontweight='bold', fontsize=11)
         
-        # 차트 꾸미기
-        ax.set_title('BigSignal 포트폴리오 전략별 수익률 비교', fontsize=16, fontweight='bold', pad=20)
-        ax.set_ylabel('수익률 (%)', fontsize=12)
-        ax.set_xlabel('포트폴리오 전략', fontsize=12)
+        # 차트 꾸미기 - 언어에 따라 제목 변경
+        if self.use_korean:
+            title = 'BigSignal 포트폴리오 전략별 수익률 비교'
+            ylabel = '수익률 (%)'
+            xlabel = '포트폴리오 전략'
+        else:
+            title = 'BigSignal Portfolio Strategy Returns Comparison'
+            ylabel = 'Return (%)'
+            xlabel = 'Portfolio Strategy'
+            
+        ax.set_title(title, fontsize=16, fontweight='bold', pad=20)
+        ax.set_ylabel(ylabel, fontsize=12)
+        ax.set_xlabel(xlabel, fontsize=12)
         ax.axhline(y=0, color='black', linestyle='-', alpha=0.3)
         ax.grid(True, alpha=0.3)
         
@@ -148,14 +170,14 @@ class BigSignalChartGenerator:
             print("   ⚠️ 포트폴리오 스냅샷 데이터가 없습니다.")
             return
         
-        # 데이터프레임 생성
+        # 데이터프레임 생성 - 올바른 필드명 사용
         data = []
         for snapshot in snapshots:
             data.append({
                 'timestamp': snapshot.timestamp,
                 'portfolio': snapshot.portfolio.name,
-                'value': float(snapshot.portfolio_value),
-                'profit_loss_pct': float(snapshot.pnl_percentage)
+                'value': float(snapshot.portfolio_value),  # total_value -> portfolio_value
+                'profit_loss_pct': float(snapshot.pnl_percentage)  # 올바른 필드명 사용
             })
         
         df = pd.DataFrame(data)
@@ -170,8 +192,20 @@ class BigSignalChartGenerator:
             ax1.plot(portfolio_data['timestamp'], portfolio_data['value'], 
                     label=portfolio_name.replace('_', ' '), color=color, linewidth=2, alpha=0.8)
         
-        ax1.set_title('포트폴리오별 총 가치 변화', fontsize=14, fontweight='bold')
-        ax1.set_ylabel('포트폴리오 가치 ($)', fontsize=11)
+        # 제목 설정
+        if self.use_korean:
+            ax1.set_title('포트폴리오별 총 가치 변화', fontsize=14, fontweight='bold')
+            ax1.set_ylabel('포트폴리오 가치 ($)', fontsize=11)
+            ax2.set_title('포트폴리오별 수익률 변화', fontsize=14, fontweight='bold')
+            ax2.set_ylabel('수익률 (%)', fontsize=11)
+            ax2.set_xlabel('시간', fontsize=11)
+        else:
+            ax1.set_title('Portfolio Value Timeline', fontsize=14, fontweight='bold')
+            ax1.set_ylabel('Portfolio Value ($)', fontsize=11)
+            ax2.set_title('Portfolio Return Timeline', fontsize=14, fontweight='bold')
+            ax2.set_ylabel('Return (%)', fontsize=11)
+            ax2.set_xlabel('Time', fontsize=11)
+        
         ax1.legend(bbox_to_anchor=(1.05, 1), loc='upper left')
         ax1.grid(True, alpha=0.3)
         
@@ -182,9 +216,6 @@ class BigSignalChartGenerator:
             ax2.plot(portfolio_data['timestamp'], portfolio_data['profit_loss_pct'], 
                     label=portfolio_name.replace('_', ' '), color=color, linewidth=2, alpha=0.8)
         
-        ax2.set_title('포트폴리오별 수익률 변화', fontsize=14, fontweight='bold')
-        ax2.set_ylabel('수익률 (%)', fontsize=11)
-        ax2.set_xlabel('시간', fontsize=11)
         ax2.axhline(y=0, color='black', linestyle='--', alpha=0.5)
         ax2.grid(True, alpha=0.3)
         
@@ -219,13 +250,21 @@ class BigSignalChartGenerator:
         # 파이 차트
         wedges, texts, autotexts = ax1.pie(counts, labels=assets, colors=colors[:len(assets)], 
                                           autopct='%1.1f%%', startangle=90, explode=[0.05]*len(assets))
-        ax1.set_title('자산별 거래 분포', fontsize=14, fontweight='bold')
         
         # 막대 차트
         bars = ax2.bar(assets, counts, color=colors[:len(assets)], alpha=0.8)
-        ax2.set_title('자산별 거래 수', fontsize=14, fontweight='bold')
-        ax2.set_ylabel('거래 수', fontsize=11)
-        ax2.set_xlabel('자산', fontsize=11)
+        
+        # 제목 설정
+        if self.use_korean:
+            ax1.set_title('자산별 거래 분포', fontsize=14, fontweight='bold')
+            ax2.set_title('자산별 거래 수', fontsize=14, fontweight='bold')
+            ax2.set_ylabel('거래 수', fontsize=11)
+            ax2.set_xlabel('자산', fontsize=11)
+        else:
+            ax1.set_title('Asset Distribution', fontsize=14, fontweight='bold')
+            ax2.set_title('Trades by Asset', fontsize=14, fontweight='bold')
+            ax2.set_ylabel('Number of Trades', fontsize=11)
+            ax2.set_xlabel('Asset', fontsize=11)
         
         # 막대 위에 수치 표시
         for bar, count in zip(bars, counts):
@@ -260,7 +299,8 @@ class BigSignalChartGenerator:
             month_key = snapshot.timestamp.strftime('%Y-%m')
             if month_key not in monthly_data:
                 monthly_data[month_key] = {}
-            monthly_data[month_key][snapshot.portfolio.name] = float(snapshot.profit_loss_percentage)
+            # 올바른 필드명 사용
+            monthly_data[month_key][snapshot.portfolio.name] = float(snapshot.pnl_percentage)
         
         # 데이터프레임 생성
         df = pd.DataFrame(monthly_data).T
@@ -279,9 +319,19 @@ class BigSignalChartGenerator:
             ax.bar(x + offset, df[portfolio], width, label=portfolio.replace('_', ' '), 
                   color=color, alpha=0.8)
         
-        ax.set_title('월별 포트폴리오 수익률 비교', fontsize=14, fontweight='bold')
-        ax.set_ylabel('수익률 (%)', fontsize=11)
-        ax.set_xlabel('월', fontsize=11)
+        # 제목 설정
+        if self.use_korean:
+            title = '월별 포트폴리오 수익률 비교'
+            ylabel = '수익률 (%)'
+            xlabel = '월'
+        else:
+            title = 'Monthly Portfolio Returns Comparison'
+            ylabel = 'Return (%)'
+            xlabel = 'Month'
+            
+        ax.set_title(title, fontsize=14, fontweight='bold')
+        ax.set_ylabel(ylabel, fontsize=11)
+        ax.set_xlabel(xlabel, fontsize=11)
         ax.set_xticks(x)
         ax.set_xticklabels(df.index, rotation=45)
         ax.legend(bbox_to_anchor=(1.05, 1), loc='upper left')
@@ -314,6 +364,7 @@ class BigSignalChartGenerator:
             if snapshots.count() < 2:
                 continue
             
+            # 올바른 필드명 사용
             returns = [float(s.pnl_percentage) for s in snapshots]
             
             avg_return = np.mean(returns)
@@ -341,9 +392,19 @@ class BigSignalChartGenerator:
                        (metric['risk'], metric['current_return']),
                        xytext=(5, 5), textcoords='offset points', fontsize=10)
         
-        ax.set_title('포트폴리오 리스크-수익률 분석', fontsize=14, fontweight='bold')
-        ax.set_xlabel('리스크 (변동성 %)', fontsize=11)
-        ax.set_ylabel('현재 수익률 (%)', fontsize=11)
+        # 제목 설정
+        if self.use_korean:
+            title = '포트폴리오 리스크-수익률 분석'
+            xlabel = '리스크 (변동성 %)'
+            ylabel = '현재 수익률 (%)'
+        else:
+            title = 'Portfolio Risk-Return Analysis'
+            xlabel = 'Risk (Volatility %)'
+            ylabel = 'Current Return (%)'
+            
+        ax.set_title(title, fontsize=14, fontweight='bold')
+        ax.set_xlabel(xlabel, fontsize=11)
+        ax.set_ylabel(ylabel, fontsize=11)
         ax.grid(True, alpha=0.3)
         ax.axhline(y=0, color='black', linestyle='--', alpha=0.5)
         ax.axvline(x=0, color='black', linestyle='--', alpha=0.5)
@@ -389,7 +450,7 @@ class BigSignalChartGenerator:
             if prices['first'] and prices['last']:
                 buy_hold_returns[asset] = ((prices['last'] - prices['first']) / prices['first']) * 100
         
-        # BigSignal 전략 수익률
+        # BigSignal 전략 수익률 - 올바른 필드명 사용
         bigsignal_returns = {}
         for portfolio in Portfolio.objects.all():
             bigsignal_returns[portfolio.name] = float(portfolio.pnl_percentage)
@@ -416,8 +477,16 @@ class BigSignalChartGenerator:
                    ha='center', va='bottom', fontweight='bold')
             x_pos += 1
         
-        ax.set_title('Buy & Hold vs BigSignal 전략 수익률 비교', fontsize=14, fontweight='bold')
-        ax.set_ylabel('수익률 (%)', fontsize=11)
+        # 제목 설정
+        if self.use_korean:
+            title = 'Buy & Hold vs BigSignal 전략 수익률 비교'
+            ylabel = '수익률 (%)'
+        else:
+            title = 'Buy & Hold vs BigSignal Strategy Returns'
+            ylabel = 'Return (%)'
+            
+        ax.set_title(title, fontsize=14, fontweight='bold')
+        ax.set_ylabel(ylabel, fontsize=11)
         ax.axhline(y=0, color='black', linestyle='-', alpha=0.3)
         ax.grid(True, alpha=0.3)
         
@@ -444,7 +513,7 @@ class BigSignalChartGenerator:
         total_trades = Trade.objects.count()
         portfolios = Portfolio.objects.all()
         
-        # 최고/최저 성과 포트폴리오
+        # 최고/최저 성과 포트폴리오 - 올바른 필드명 사용
         best_portfolio = portfolios.order_by('-pnl_percentage').first()
         worst_portfolio = portfolios.order_by('pnl_percentage').first()
         
@@ -474,9 +543,10 @@ class BigSignalChartGenerator:
 🏆 성과 순위
 """
         
+        # 성과 순위 - 올바른 필드명 사용
         for i, portfolio in enumerate(portfolios.order_by('-pnl_percentage'), 1):
             status = "🥇" if i == 1 else "🥈" if i == 2 else "🥉" if i == 3 else f"{i}위"
-            report += f"{status} {portfolio.name.replace('_', ' ')}: {portfolio.pnl_percentage:.2f}%\n"
+            report += f"{status} {portfolio.name.replace('_', ' ')}: {float(portfolio.pnl_percentage):.2f}%\n"
         
         report += f"""
 📊 자산별 거래 분포
@@ -484,11 +554,15 @@ class BigSignalChartGenerator:
         for item in asset_counts:
             report += f"- {item['asset']}: {item['count']}개 거래\n"
         
+        # 주요 인사이트 - 타입 문제 해결 (모두 float로 통일)
+        best_return = float(best_portfolio.pnl_percentage) if best_portfolio else 0
+        worst_return = float(worst_portfolio.pnl_percentage) if worst_portfolio else 0
+        
         report += f"""
 💡 주요 인사이트
-- 최고 성과 전략: {best_portfolio.name.replace('_', ' ')} ({best_portfolio.pnl_percentage:.2f}%)
-- 최저 성과 전략: {worst_portfolio.name.replace('_', ' ')} ({worst_portfolio.pnl_percentage:.2f}%)
-- 성과 차이: {best_portfolio.profit_loss_percentage - worst_portfolio.pnl_percentage:.2f}%p
+- 최고 성과 전략: {best_portfolio.name.replace('_', ' ')} ({best_return:.2f}%)
+- 최저 성과 전략: {worst_portfolio.name.replace('_', ' ')} ({worst_return:.2f}%)
+- 성과 차이: {best_return - worst_return:.2f}%p
 
 📁 생성된 차트
 - portfolio_performance.png: 전략별 수익률 비교
