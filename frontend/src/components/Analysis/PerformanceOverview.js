@@ -21,6 +21,8 @@ const PerformanceOverview = () => {
   const [portfolios, setPortfolios] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [filteredPortfolios, setFilteredPortfolios] = useState([]);
+  const [filters, setFilters] = useState({ showNegative: true, assetType: 'all', sortBy: 'return' });
 
   useEffect(() => {
     const fetchData = async () => {
@@ -48,8 +50,44 @@ const PerformanceOverview = () => {
       }
     };
 
+    // 즉시 한 번 호출
     fetchData();
+
+    // 30초마다 자동 업데이트
+    const interval = setInterval(fetchData, 30000);
+
+    return () => clearInterval(interval);
   }, []);
+
+  // 필터/정렬 적용 함수
+  const applyFilters = (filtersToApply) => {
+    let result = [...portfolios];
+
+    if (!filtersToApply.showNegative) {
+      result = result.filter(p => p.total_return >= 0);
+    }
+
+    if (filtersToApply.assetType === 'single') {
+      result = result.filter(p => !p.name.includes('All') && !p.name.includes('Top'));
+    } else if (filtersToApply.assetType === 'mixed') {
+      result = result.filter(p => p.name.includes('All') || p.name.includes('Top'));
+    }
+
+    result.sort((a, b) => {
+      if (filtersToApply.sortBy === 'return') {
+        return b.total_return - a.total_return;
+      } else if (filtersToApply.sortBy === 'value') {
+        return b.final_value - a.final_value;
+      } else {
+        return a.name.localeCompare(b.name);
+      }
+    });
+
+    setFilteredPortfolios(result);
+  };
+
+  // portfolios가 바뀔 때마다 현재 필터를 적용
+  useEffect(() => applyFilters(filters), [portfolios, filters]);
 
   if (loading) {
     return <div className="loading-spinner">로딩 중...</div>;
@@ -59,24 +97,26 @@ const PerformanceOverview = () => {
     return <div className="error-message">{error}</div>;
   }
 
-  if (!portfolios || portfolios.length === 0) {
+  const displayList = (filteredPortfolios && filteredPortfolios.length > 0) ? filteredPortfolios : portfolios;
+
+  if (!displayList || displayList.length === 0) {
     return <div className="empty-message">표시할 포트폴리오 데이터가 없습니다.</div>;
   }
 
   // 안전한 최고/최저 산출
-  const bestPortfolio = portfolios.reduce((prev, curr) =>
+  const bestPortfolio = displayList.reduce((prev, curr) =>
     curr.total_return > prev.total_return ? curr : prev
-  , portfolios[0]);
+  , displayList[0]);
   
-  const worstPortfolio = portfolios.reduce((prev, curr) =>
+  const worstPortfolio = displayList.reduce((prev, curr) =>
     curr.total_return < prev.total_return ? curr : prev
-  , portfolios[0]);
+  , displayList[0]);
 
   return (
     <section className="performance-overview">
       <h2>포트폴리오 성과 순위</h2>
       <div className="portfolio-grid">
-        {portfolios.map((portfolio) => {
+  {displayList.map((portfolio) => {
           const isBest = portfolio.name === bestPortfolio.name;
           const isWorst = portfolio.name === worstPortfolio.name;
           const isPositive = portfolio.total_return >= 0;
