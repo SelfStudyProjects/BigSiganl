@@ -67,3 +67,48 @@ body {
     padding: 0 1rem;
   }
 }
+
+/* 태블릿 */
+@media (max-width: 768px) {
+  .portfolio-grid {
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 16px;
+  }
+  
+  .chart-tabs {
+    overflow-x: auto;
+    flex-wrap: nowrap;
+  }
+  
+  .chart-tab {
+    min-width: 120px;
+    font-size: 13px;
+  }
+  
+  .trust-stats {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* 모바일 */
+@media (max-width: 480px) {
+  .portfolio-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .hero h1 {
+    font-size: 28px;
+  }
+  
+  .return-percentage {
+    font-size: 28px;
+  }
+  
+  .trust-stats {
+    grid-template-columns: 1fr;
+  }
+  
+  .stat-card {
+    padding: 20px;
+  }
+}

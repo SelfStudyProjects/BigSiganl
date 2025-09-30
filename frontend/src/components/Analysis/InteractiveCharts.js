@@ -1,10 +1,11 @@
 // src/components/Analysis/InteractiveCharts.js
 import React, { useState } from 'react';
-import { getChartUrl } from '../../services/api';  // 직접 import
+import { getChartUrl } from '../../services/api';
 import './InteractiveCharts.css';
 
 const InteractiveCharts = () => {
   const [selectedChart, setSelectedChart] = useState('portfolio_performance');
+  const [imageError, setImageError] = useState(false);
 
   const chartOptions = [
     { key: 'portfolio_performance', label: '포트폴리오 성과 비교', icon: '📊' },
@@ -26,9 +27,10 @@ const InteractiveCharts = () => {
               key={option.key}
               className={`chart-tab ${selectedChart === option.key ? 'active' : ''}`}
               onClick={() => {
-                console.log('Clicked:', option.key);
                 setSelectedChart(option.key);
-              }}            >
+                setImageError(false);
+              }}
+            >
               <span className="tab-icon">{option.icon}</span>
               <span className="tab-label">{option.label}</span>
             </button>
@@ -36,20 +38,24 @@ const InteractiveCharts = () => {
         </div>
 
         <div className="chart-container">
-          <img 
-            src={getChartUrl(selectedChart)}
-            alt={chartOptions.find(opt => opt.key === selectedChart)?.label}
-            className="chart-image"
-            onError={(e) => {
-              console.log('Chart image failed to load:', e.target.src);
-              e.target.src = '/images/chart-placeholder.png';
-              e.target.alt = '차트를 불러올 수 없습니다';
-            }}
-          />
-        </div>
+          <p className="chart-description">{getChartDescription(selectedChart)}</p>
 
-        <div className="chart-description">
-          {getChartDescription(selectedChart)}
+          {!imageError ? (
+            <img
+              src={typeof getChartUrl === 'function' ? getChartUrl(selectedChart) : `/api/analysis/charts/${selectedChart}/`}
+              alt={chartOptions.find(opt => opt.key === selectedChart)?.label || selectedChart}
+              className="chart-image"
+              onError={() => {
+                console.warn('Chart image failed to load for', selectedChart);
+                setImageError(true);
+              }}
+            />
+          ) : (
+            <div className="chart-placeholder">
+              <p>⚠️ 차트를 불러올 수 없습니다</p>
+              <small>백엔드에서 차트가 생성되었는지, URL(/api/analysis/charts/{selectedChart}/)을 확인하세요.</small>
+            </div>
+          )}
         </div>
       </div>
     </section>

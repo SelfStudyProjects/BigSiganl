@@ -9,7 +9,7 @@ import os
 from datetime import datetime, timedelta
 from trades.models import Trade
 from portfolios.models import Portfolio, PortfolioSnapshot
-from django.db.models import Count, Sum, Avg
+from django.db.models import Count, Sum, Avg, F, Value, DecimalField, ExpressionWrapper
 from django.utils import timezone
 from django.shortcuts import render
 
@@ -158,14 +158,14 @@ def portfolio_timeline(request):
     
     try:
         portfolio = Portfolio.objects.get(name=portfolio_name)
-        snapshots = PortfolioSnapshot.objects.filter(
+        snapshots = list(PortfolioSnapshot.objects.filter(
             portfolio=portfolio
-        ).order_by('-timestamp')[:days*24]  # 시간별 데이터
-        
+        ).order_by('-timestamp')[:days*24])  # 시간별 데이터
+
         timeline_data = [{
             'timestamp': snap.timestamp.isoformat(),
-            'value': float(snap.current_value),
-            'pnl': float(snap.pnl_absolute)
+            'value': float(snap.portfolio_value),
+            'pnl': float(snap.pnl_percentage)
         } for snap in reversed(snapshots)]
         
         return Response({
@@ -186,9 +186,14 @@ def trading_statistics(request):
     sell_count = trades.filter(action='SELL').count()
     
     # 자산별 통계
+    # Trade에는 `amount` 필드가 없으므로, 단순화하여 거래별 명목(notional) 금액 = price * (percentage / 100) 합계를 계산합니다.
+    notional_expr = ExpressionWrapper(
+        F('price') * (F('percentage') / Value(100)),
+        output_field=DecimalField(max_digits=20, decimal_places=2)
+    )
     asset_stats = trades.values('asset').annotate(
         count=Count('id'),
-        total_amount=Sum('amount')
+        total_notional=Sum(notional_expr)
     ).order_by('-count')
     
     return Response({
@@ -209,17 +214,17 @@ def risk_metrics(request):
     
     risk_data = []
     for portfolio in portfolios:
-        snapshots = PortfolioSnapshot.objects.filter(
+        snapshots = list(PortfolioSnapshot.objects.filter(
             portfolio=portfolio
-        ).order_by('timestamp')
-        
-        if snapshots.count() < 2:
+        ).order_by('timestamp'))
+
+        if len(snapshots) < 2:
             continue
-        
+
         returns = []
         for i in range(1, len(snapshots)):
-            prev_val = float(snapshots[i-1].current_value)
-            curr_val = float(snapshots[i].current_value)
+            prev_val = float(snapshots[i-1].portfolio_value)
+            curr_val = float(snapshots[i].portfolio_value)
             if prev_val > 0:
                 returns.append((curr_val - prev_val) / prev_val)
         
