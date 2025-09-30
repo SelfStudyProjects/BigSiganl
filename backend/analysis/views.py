@@ -7,11 +7,16 @@ from django.conf import settings
 from pathlib import Path
 import os
 from datetime import datetime, timedelta
-
 from trades.models import Trade
 from portfolios.models import Portfolio, PortfolioSnapshot
 from django.db.models import Count, Sum, Avg
 from django.utils import timezone
+from django.shortcuts import render
+
+@api_view(['GET'])
+def analysis_dashboard(request):
+    """분석 대시보드 페이지 (기존 호환성 유지)"""
+    return render(request, 'analysis/dashboard.html')
 
 # 새로운 분석 API들
 @api_view(['GET'])
@@ -116,3 +121,128 @@ def buy_hold_comparison(request):
 @api_view(['POST'])
 def regenerate_charts(request):
     return Response({'message': 'Regenerate Charts - 개발 중'})
+
+@api_view(['GET'])
+def asset_performance_api(request):
+    """자산별 성과 API (기존 호환성)"""
+    return Response({'message': 'Asset Performance API - 개발 중'})
+
+@api_view(['GET'])
+def asset_detail_api(request, asset_name):
+    """특정 자산 상세 정보"""
+    return Response({
+        'asset': asset_name,
+        'message': 'Asset Detail API - 개발 중'
+    })
+
+@api_view(['GET'])
+def latest_prices_api(request):
+    """최신 가격 정보"""
+    return Response({'message': 'Latest Prices API - 개발 중'})
+
+@api_view(['GET'])
+def portfolio_vs_assets_comparison(request):
+    """포트폴리오 vs 자산 비교"""
+    return Response({'message': 'Portfolio vs Assets Comparison - 개발 중'})
+
+@api_view(['GET'])
+def price_history_summary(request):
+    """가격 히스토리 요약"""
+    return Response({'message': 'Price History Summary - 개발 중'})
+
+@api_view(['GET'])
+def portfolio_timeline(request):
+    """시간별 포트폴리오 가치 변화"""
+    portfolio_name = request.GET.get('portfolio', 'All_Assets')
+    days = int(request.GET.get('days', 30))
+    
+    try:
+        portfolio = Portfolio.objects.get(name=portfolio_name)
+        snapshots = PortfolioSnapshot.objects.filter(
+            portfolio=portfolio
+        ).order_by('-timestamp')[:days*24]  # 시간별 데이터
+        
+        timeline_data = [{
+            'timestamp': snap.timestamp.isoformat(),
+            'value': float(snap.current_value),
+            'pnl': float(snap.pnl_absolute)
+        } for snap in reversed(snapshots)]
+        
+        return Response({
+            'status': 'success',
+            'portfolio': portfolio_name,
+            'timeline': timeline_data
+        })
+    except Portfolio.DoesNotExist:
+        return Response({'error': 'Portfolio not found'}, status=404)
+
+@api_view(['GET'])
+def trading_statistics(request):
+    """거래 통계 분석"""
+    trades = Trade.objects.all()
+    
+    total_trades = trades.count()
+    buy_count = trades.filter(action='BUY').count()
+    sell_count = trades.filter(action='SELL').count()
+    
+    # 자산별 통계
+    asset_stats = trades.values('asset').annotate(
+        count=Count('id'),
+        total_amount=Sum('amount')
+    ).order_by('-count')
+    
+    return Response({
+        'status': 'success',
+        'overview': {
+            'total_trades': total_trades,
+            'buy_trades': buy_count,
+            'sell_trades': sell_count,
+            'buy_ratio': round(buy_count/total_trades*100, 2) if total_trades > 0 else 0
+        },
+        'asset_breakdown': list(asset_stats)
+    })
+
+@api_view(['GET'])
+def risk_metrics(request):
+    """리스크 메트릭 계산"""
+    portfolios = Portfolio.objects.all()
+    
+    risk_data = []
+    for portfolio in portfolios:
+        snapshots = PortfolioSnapshot.objects.filter(
+            portfolio=portfolio
+        ).order_by('timestamp')
+        
+        if snapshots.count() < 2:
+            continue
+        
+        returns = []
+        for i in range(1, len(snapshots)):
+            prev_val = float(snapshots[i-1].current_value)
+            curr_val = float(snapshots[i].current_value)
+            if prev_val > 0:
+                returns.append((curr_val - prev_val) / prev_val)
+        
+        if returns:
+            import numpy as np
+            volatility = np.std(returns) * np.sqrt(365) * 100  # 연율화
+            max_return = max(returns) * 100
+            min_return = min(returns) * 100
+        else:
+            volatility = 0
+            max_return = 0
+            min_return = 0
+        
+        risk_data.append({
+            'name': portfolio.name,
+            'display_name': portfolio.name.replace('_', ' '),
+            'volatility': round(volatility, 2),
+            'max_daily_return': round(max_return, 2),
+            'min_daily_return': round(min_return, 2),
+            'current_return': float(portfolio.pnl_percentage)
+        })
+    
+    return Response({
+        'status': 'success',
+        'risk_metrics': risk_data
+    })
