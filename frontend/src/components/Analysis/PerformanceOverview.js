@@ -1,6 +1,6 @@
 // src/components/Analysis/PerformanceOverview.js
 import React, { useState, useEffect } from 'react';
-import { api } from '../../services/api';
+import { getPerformanceData } from '../../services/api';
 import './PerformanceOverview.css';
 
 const PerformanceOverview = () => {
@@ -10,15 +10,15 @@ const PerformanceOverview = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const data = await api.getPerformanceData();
+        const data = await getPerformanceData();
+        console.log('API Response:', data); // 디버깅용
         setPerformanceData(data);
       } catch (error) {
-        console.error('성과 데이터 로드 실패:', error);
+        console.error('API Error:', error);
       } finally {
         setLoading(false);
       }
     };
-
     fetchData();
   }, []);
 

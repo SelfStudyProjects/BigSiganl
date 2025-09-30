@@ -1,7 +1,7 @@
 // src/components/Landing/TrustSection.js
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { api } from '../../services/api';
+import { getDashboardData } from '../../services/api';  // 수정: 직접 함수 import
 import './TrustSection.css';
 
 const TrustSection = () => {
@@ -11,7 +11,7 @@ const TrustSection = () => {
   useEffect(() => {
     const fetchSummaryData = async () => {
       try {
-        const data = await api.getDashboardData();
+        const data = await getDashboardData();  // 수정: api 객체 제거
         setSummaryData(data);
       } catch (error) {
         console.error('요약 데이터 로드 실패:', error);

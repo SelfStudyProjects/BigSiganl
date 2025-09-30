@@ -25,8 +25,10 @@ const InteractiveCharts = () => {
             <button
               key={option.key}
               className={`chart-tab ${selectedChart === option.key ? 'active' : ''}`}
-              onClick={() => setSelectedChart(option.key)}
-            >
+              onClick={() => {
+                console.log('Clicked:', option.key);
+                setSelectedChart(option.key);
+              }}            >
               <span className="tab-icon">{option.icon}</span>
               <span className="tab-label">{option.label}</span>
             </button>
@@ -39,6 +41,7 @@ const InteractiveCharts = () => {
             alt={chartOptions.find(opt => opt.key === selectedChart)?.label}
             className="chart-image"
             onError={(e) => {
+              console.log('Chart image failed to load:', e.target.src);
               e.target.src = '/images/chart-placeholder.png';
               e.target.alt = '차트를 불러올 수 없습니다';
             }}
