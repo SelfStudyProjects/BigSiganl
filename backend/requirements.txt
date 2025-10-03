@@ -26,7 +26,7 @@ Telethon==1.41.2
 tzdata==2025.2
 gunicorn==21.2.0
 dj-database-url==2.1.0
-psycopg2-binary==2.9.9  # NOTE: commented out below for Windows dev if pg_config is not available
+#psycopg2-binary==2.9.9  # commented out for Windows dev (pg_config missing)
 whitenoise==6.6.0
 
 # If installation fails on Windows because pg_config is missing, either:
