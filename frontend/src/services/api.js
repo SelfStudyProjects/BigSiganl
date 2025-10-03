@@ -1,65 +1,56 @@
-// src/services/api.js - 완전한 버전
-import axios from 'axios';
+// API Base URL 설정 (환경변수 사용)
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
 
-const API_BASE_URL = 'http://localhost:8000';
-
-// 기존 함수들
-export const getTrades = async () => {
-    try {
-        const response = await axios.get(`${API_BASE_URL}/api/trades/`);
-        return response.data;
-    } catch (error) {
-        console.error('Error fetching trades:', error);
-        throw error;
-    }
-};
-
-export const getPortfolios = async () => {
-    try {
-        const response = await axios.get(`${API_BASE_URL}/api/portfolios/`);
-        return response.data;
-    } catch (error) {
-        console.error('Error fetching portfolios:', error);
-        throw error;
-    }
-};
-
-// 새로운 분석 함수들
+// 포트폴리오 성과 데이터
 export const getPerformanceData = async () => {
-    try {
-        const response = await fetch(`${API_BASE_URL}/api/analysis/performance/`);
-        if (!response.ok) throw new Error('API 호출 실패');
-        return await response.json();
-    } catch (error) {
-        console.error('성과 데이터 로드 실패:', error);
-        throw error;
-    }
+  const response = await fetch(`${API_BASE_URL}/api/analysis/performance/`);
+  if (!response.ok) throw new Error('Failed to fetch performance data');
+  return response.json();
 };
 
+// 대시보드 요약 데이터
 export const getDashboardData = async () => {
-    try {
-        const response = await fetch(`${API_BASE_URL}/api/analysis/dashboard/`);
-        if (!response.ok) throw new Error('API 호출 실패');
-        return await response.json();
-    } catch (error) {
-        console.error('대시보드 데이터 로드 실패:', error);
-        throw error;
-    }
+  const response = await fetch(`${API_BASE_URL}/api/analysis/dashboard-summary/`);
+  if (!response.ok) throw new Error('Failed to fetch dashboard data');
+  return response.json();
 };
 
-export const getChartUrl = (chartType) => `${API_BASE_URL}/media/charts/${chartType}.png`;
+// 차트 이미지 URL 생성
+export const getChartUrl = (chartName) => {
+  return `${API_BASE_URL}/api/analysis/charts/${chartName}/`;
+};
 
-// 통합 API 객체 - 이 부분이 핵심!
-export const api = {
-    trades: {
-        getAll: getTrades,
-    },
-    portfolios: {
-        getAll: getPortfolios,
-    },
-    analysis: {
-        getPerformanceData: getPerformanceData,
-        getDashboardData: getDashboardData,
-        getChartUrl: getChartUrl  // 이 부분이 중요!
-    }
+// 거래 데이터 (기존 함수 - 있으면 유지, 없으면 추가)
+export const getTrades = async () => {
+  const response = await fetch(`${API_BASE_URL}/api/trades/`);
+  if (!response.ok) throw new Error('Failed to fetch trades');
+  return response.json();
+};
+
+// 포트폴리오 목록 (기존 함수 - 있으면 유지, 없으면 추가)
+export const getPortfolios = async () => {
+  const response = await fetch(`${API_BASE_URL}/api/portfolios/`);
+  if (!response.ok) throw new Error('Failed to fetch portfolios');
+  return response.json();
+};
+
+// 타임라인 데이터 (추가)
+export const getTimelineData = async (portfolio = 'All_Assets', days = 30) => {
+  const response = await fetch(`${API_BASE_URL}/api/analysis/timeline/?portfolio=${portfolio}&days=${days}`);
+  if (!response.ok) throw new Error('Failed to fetch timeline data');
+  return response.json();
+};
+
+// 거래 통계 (추가)
+export const getTradingStats = async () => {
+  const response = await fetch(`${API_BASE_URL}/api/analysis/trading-stats/`);
+  if (!response.ok) throw new Error('Failed to fetch trading stats');
+  return response.json();
+};
+
+// 리스크 메트릭 (추가)
+export const getRiskMetrics = async () => {
+  const response = await fetch(`${API_BASE_URL}/api/analysis/risk-metrics/`);
+  if (!response.ok) throw new Error('Failed to fetch risk metrics');
+  return response.json();
 };
