@@ -37,3 +37,30 @@ yarn-error.log*
 .env
 *.log
 media/charts/*
+
+# Python
+*.pyc
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.egg-info/
+
+# Django
+db.sqlite3
+*.log
+media/
+staticfiles/
+
+# 환경 변수
+.env
+.env.local
+.env.production
+
+# Telegram 세션
+*.session
+*.session-journal
+
+# IDE
+.vscode/
+.idea/
