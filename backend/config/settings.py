@@ -172,3 +172,21 @@ if not DEBUG:
     
     # Whitenoise 정적 파일 압축
     STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+
+# CORS (프로덕션용)
+if DEBUG:
+    CORS_ALLOWED_ORIGINS = [
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+    ]
+else:
+    CORS_ALLOWED_ORIGINS = [
+        "https://bigsignal.web.app",  # Firebase 도메인
+        "https://bigsignal.firebaseapp.com",
+        "https://bigsignal-xxxxx.web.app",  # Firebase가 생성한 실제 도메인
+    ]
+    
+    # Render 백엔드도 허용 (AJAX 요청용)
+    CSRF_TRUSTED_ORIGINS = [
+        "https://bigsignal-backend.onrender.com",
+    ]
