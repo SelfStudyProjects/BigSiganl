@@ -1,6 +1,6 @@
 import os
 from pathlib import Path
-import dj_database_url  # added for DATABASES config
+import dj_database_url
 from dotenv import load_dotenv
 
 # .env 파일 로드
@@ -27,9 +27,6 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'rest_framework',
-
-    # Third party apps
-    # 'rest_framework',
     'corsheaders',
     
     # Local apps
@@ -127,7 +124,7 @@ REST_FRAMEWORK = {
     ],
 }
 
-# CORS settings
+# CORS settings (개발/프로덕션 환경 분리)
 if DEBUG:
     CORS_ALLOWED_ORIGINS = [
         'http://localhost:3000',
@@ -135,11 +132,14 @@ if DEBUG:
     ]
 else:
     CORS_ALLOWED_ORIGINS = [
-        'https://bigsignal.web.app',
-        'https://bigsignal.firebaseapp.com',
+        'https://bigsignal-dd31f.web.app',  # Firebase 실제 도메인
+        'https://bigsignal-dd31f.firebaseapp.com',
     ]
-
-# CORS_ALLOW_CREDENTIALS = True
+    
+    # CSRF 신뢰 도메인 (Render 백엔드)
+    CSRF_TRUSTED_ORIGINS = [
+        'https://bigsignal-backend.onrender.com',
+    ]
 
 # Telegram settings
 TELEGRAM_API_ID = os.getenv('TELEGRAM_API_ID', '')
@@ -160,7 +160,6 @@ PORTFOLIO_CONFIGS = [
 ]
 SUPPORTED_ASSETS = ['BTC', 'USDT', 'DOGE']
 
-
 # 프로덕션 보안 설정
 if not DEBUG:
     SECURE_SSL_REDIRECT = True
@@ -172,21 +171,3 @@ if not DEBUG:
     
     # Whitenoise 정적 파일 압축
     STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
-
-# CORS (프로덕션용)
-if DEBUG:
-    CORS_ALLOWED_ORIGINS = [
-        "http://localhost:3000",
-        "http://127.0.0.1:3000",
-    ]
-else:
-    CORS_ALLOWED_ORIGINS = [
-        "https://bigsignal.web.app",  # Firebase 도메인
-        "https://bigsignal.firebaseapp.com",
-        "https://bigsignal-xxxxx.web.app",  # Firebase가 생성한 실제 도메인
-    ]
-    
-    # Render 백엔드도 허용 (AJAX 요청용)
-    CSRF_TRUSTED_ORIGINS = [
-        "https://bigsignal-backend.onrender.com",
-    ]
