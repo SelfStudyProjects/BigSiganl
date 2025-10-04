@@ -1,8 +1,5 @@
 {
-  "projects": [
-    {
-      "projectId": "bigsignal-dd31f",
-      "projectNumber": "30957044779"
-    }
-  ]
+  "projects": {
+    "default": "bigsignal-dd31f"
+  }
 }
