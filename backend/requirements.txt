@@ -27,7 +27,11 @@ tzdata==2025.2
 gunicorn==21.2.0
 dj-database-url==2.1.0
 #psycopg2-binary==2.9.9  # commented out for Windows dev (pg_config missing)
+
 whitenoise==6.6.0
+
+# Use psycopg (v3) with the binary wheel on production so we don't need pg_config during install
+psycopg[binary]
 
 # If installation fails on Windows because pg_config is missing, either:
 #  - Install PostgreSQL client/devel and ensure pg_config is on PATH, OR
