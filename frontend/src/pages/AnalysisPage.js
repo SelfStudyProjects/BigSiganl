@@ -1,5 +1,5 @@
 // src/pages/AnalysisPage.js
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import AnalysisHeader from '../components/Analysis/AnalysisHeader';
 import PerformanceOverview from '../components/Analysis/PerformanceOverview';
 import InteractiveCharts from '../components/Analysis/InteractiveCharts';
@@ -8,21 +8,29 @@ import Disclaimer from '../components/Analysis/Disclaimer';
 import './AnalysisPage.css';
 import { getPerformanceData, getDashboardData } from '../services/api';
 
-// useEffect에서 API 호출 확인
-useEffect(() => {
-  const fetchData = async () => {
-    try {
-      const data = await getPerformanceData();
-      console.log('Performance data:', data);
-      // 데이터 상태 업데이트
-    } catch (error) {
-      console.error('API Error:', error);
-    }
-  };
-  fetchData();
-}, []);
-
 const AnalysisPage = () => {
+  const [performanceData, setPerformanceData] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const data = await getPerformanceData();
+        console.log('Performance data:', data);
+        setPerformanceData(data);
+      } catch (error) {
+        console.error('API Error:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
+  }, []);
+
+  if (loading) {
+    return <div>Loading...</div>;
+  }
+
   return (
     <div className="analysis-page">
       <AnalysisHeader />
