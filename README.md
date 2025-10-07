@@ -424,6 +424,73 @@ class PortfolioSnapshot(models.Model):
     trade_triggered_by = models.ForeignKey(Trade, on_delete=models.SET_NULL, null=True)
 ```
 
+## 수익률 계산 공식 (요약)
+
+정의 (기호)
+- B = 초기 예산 (initial_budget)  
+- C = 현재 현금잔고 (cash_balance)  
+- i ∈ assets (포트폴리오가 보유한 각 자산)  
+- q_i = 자산 i의 보유수량 (quantity)  
+- p_i(t) = 시점 t에서 자산 i의 가격 (엔진 기준: latest trade 가격)  
+- t = 계산 시점 (예: trade.timestamp 또는 now)  
+- V(t) = 포트폴리오 총 가치 (portfolio.current_value)  
+- P_abs(t) = 절대 손익 (pnl_absolute)  
+- P_pct(t) = 수익률 (%) (pnl_percentage)
+
+핵심 공식
+1) 포트폴리오 총 가치:
+- V(t) = C + Σ_i [ q_i × p_i(t) ]
+
+2) 절대 손익:
+- P_abs(t) = V(t) − B
+
+3) 수익률 (백분율):
+- P_pct(t) = ( P_abs(t) / B ) × 100   (단, B = 0 이면 P_pct(t) = 0)
+
+매수/매도 관련
+4) 매수 금액:
+- trade_amount = C × (trade_percentage / 100)
+
+5) 매수 수량:
+- quantity_bought = trade_amount / trade_price  (trade_price > 0 가정)
+
+6) 매수 후 상태:
+- q_i' = q_i + quantity_bought  
+- C' = C − trade_amount
+
+7) 매도 수량:
+- quantity_to_sell = q_i × (trade_percentage / 100)  
+  (만약 quantity_to_sell > q_i 이면 quantity_to_sell = q_i)
+
+8) 매도 대금 및 매도 후 상태:
+- sell_amount = quantity_to_sell × trade_price  
+- q_i' = q_i − quantity_to_sell  
+- C' = C + sell_amount
+
+Buy & Hold 비교
+9) 초기 시점(p0)에서 전액 B로 산 수량:
+- initial_quantity = B / p_i(0)
+
+10) 시점 t에서의 보유 가치:
+- V_BH(t) = initial_quantity × p_i(t) = B × ( p_i(t) / p_i(0) )
+
+11) Buy & Hold 절대 손익 / 수익률:
+- P_abs_BH(t) = V_BH(t) − B = B × ( p_i(t) / p_i(0) − 1 )  
+- P_pct_BH(t) = ( P_abs_BH(t) / B ) × 100 = ( p_i(t) / p_i(0) − 1 ) × 100
+
+가격 조회 규칙
+12) p_i(t) 정의:
+- p_i(t) = latest Trade.price where asset=i and timestamp ≤ t  
+- 해당 trade가 없으면 p_i(t) = 0
+
+반올림(저장) 규칙
+- V(t) 는 소수 둘째자리(원화)로 반올림: V 저장 = round(V, 2)  (코드: Decimal.quantize(0.01, ROUND_HALF_UP))  
+- P_pct(t) 는 소수 넷째자리로 반올림: P_pct 저장 = round(P_pct, 4)
+
+예외 처리 요약
+- B = 0 → P_pct = 0 (0으로 나누기 방지)  
+- 가격 데이터 부재 → p_i(t)=0 으로 간주하여 해당 자산 가치 0 처리
+
 ## 운영 가이드
 
 ### 일일 운영 체크리스트
